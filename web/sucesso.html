@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Projeto Processado com Sucesso</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; text-align: center; padding-top: 80px; color: #333; }
+        .card { background: white; padding: 40px; border-radius: 8px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 500px; }
+        .btn { display: inline-block; padding: 12px 24px; margin: 10px; border-radius: 4px; text-decoration: none; color: white; font-weight: bold; font-size: 15px; }
+        .excel { background: #217346; }
+        .excel:hover { background: #1a5c38; }
+        .html { background: #17a2b8; }
+        .html:hover { background: #138496; }
+        .back { background: #6c757d; display: block; margin-top: 25px; }
+        .back:hover { background: #5a6268; }
+        .badge { background: #28a745; color: white; padding: 5px 10px; border-radius: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🎉 Projeto Padronizado com Sucesso!</h2>
+        <p>Os dados foram gravados na base do PostgreSQL.</p>
+        <p>Total de esforço computado: <span class="badge">{{.TotalHoras}} Horas</span></p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        <p>Escolha o formato de saída para o acompanhamento:</p>
+        
+        <!-- O ID do projeto vem da struct injetada pelo Handler -->
+        <a href="/download/excel?id={{.ID}}" class="btn excel">📊 Exportar Planilha Excel</a>
+        <a href="/download/html?id={{.ID}}" class="btn html" target="_blank">🌐 Abrir Visualização HTML</a>
+        
+        <a href="/" class="btn back">← Cadastrar Outro Projeto</a>
+    </div>
+</body>
+</html>

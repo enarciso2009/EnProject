@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastrar Login - EnProject</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; margin: 30px; }
+        .box { background: white; padding: 25px; border-radius: 8px; max-width: 450px; margin: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2 { border-bottom: 1px solid #ddd; padding-bottom: 10px; color: #333; }
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-bottom: 5px; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button { background: #28a745; color: white; border: none; padding: 12px; border-radius: 4px; font-size: 15px; font-weight: bold; cursor: pointer; }
+        button:hover { background: #218838; }
+        .btn-voltar { background: #6c757d; color: white; text-decoration: none; padding: 12px; border-radius: 4px; font-weight: bold; font-size: 15px; display: inline-block; text-align: center; margin-right: 10px; }
+        .alert-error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; font-size: 14px; margin-bottom: 15px; border: 1px solid #f5c6cb; }
+        .alert-success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; font-size: 14px; margin-bottom: 15px; border: 1px solid #c3e6cb; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>👤 Cadastrar Novo Usuário</h2>
+        
+        {{if .erro}}
+        <div class="alert-error">{{.erro}}</div>
+        {{end}}
+        
+        {{if .sucesso}}
+        <div class="alert-success">{{.sucesso}}</div>
+        {{end}}
+
+        <form action="/usuario/novo" method="POST">
+            <div class="form-group">
+                <label>E-mail de Acesso</label>
+                <input type="email" name="email" placeholder="exemplo@tracevia.com.br" required>
+            </div>
+            <div class="form-group">
+                <label>Senha Provisória</label>
+                <input type="password" name="senha" placeholder="No mínimo 4 caracteres" required>
+            </div>
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                <a href="/" class="btn-voltar">Voltar ao Painel</a>
+                <button type="submit">Salvar Usuário</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

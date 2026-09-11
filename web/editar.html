@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Projeto #{{.ID}}</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; margin: 30px; color: #333; }
+        .box { background: white; padding: 25px; border-radius: 8px; max-width: 1000px; margin: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-bottom: 5px; }
+        input, select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; justify-self: center; }
+        
+        /* Estilos das Imagens na Edição */
+        .preview-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .preview-img { width: 100px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .galeria-atual { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px dashed #ccc; }
+        .item-foto { display: inline-block; position: relative; margin-right: 5px; }
+
+        /* Estilo do botão customizado de upload */
+        .btn-upload-custom { display: inline-block; background: #007bff; color: white; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; text-align: center; width: fit-content; transition: background 0.2s; }
+        .btn-upload-custom:hover { background: #0056b3; }
+        .input-file-oculto { display: none; }
+
+        /* Estrutura de Tabela Alinhada Sem a Coluna de Horas */
+        .tarefa-header { display: grid; grid-template-columns: 2fr 1.5fr 1.1fr 1.1fr 1.2fr 0.6fr 0.5fr; gap: 10px; font-weight: bold; margin-bottom: 5px; background: #e9ecef; padding: 8px; border-radius: 4px; text-align: center; font-size: 13px; }
+        .tarefa-header div { text-align: left; }
+        .tarefa-header .center-lbl { text-align: center; }
+        .tarefa-row { display: grid; grid-template-columns: 2fr 1.5fr 1.1fr 1.1fr 1.2fr 0.6fr 0.5fr; gap: 10px; margin-bottom: 10px; align-items: center; }
+        
+        /* Estilos para a Barra de Progresso Visual */
+        .progress-container { display: flex; flex-direction: column; gap: 3px; }
+        .progress-bar-bg { background: #e9ecef; border-radius: 4px; height: 8px; width: 100%; overflow: hidden; border: 1px solid #ccc; }
+        .progress-bar-fill { background: #28a745; height: 100%; width: 0%; transition: width 0.3s; }
+
+        button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        .btn-add { background: #28a745; margin-bottom: 20px; }
+        .btn-add:hover { background: #218838; }
+        .btn-del { background: #dc3545; padding: 8px; font-size: 12px; }
+        .btn-del:hover { background: #c82333; }
+        .btn-voltar { background: #6c757d; text-decoration: none; padding: 10px 15px; border-radius: 4px; color: white; font-weight: bold; font-size: 14px; margin-right: 10px; display: inline-block; }
+        h2, h3 { color: #1a1a1a; border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-top: 30px; }
+
+        /* Customização para a Grade do Diário de Bordo */
+        .diario-block { background: #f8f9fa; padding: 20px; border-radius: 6px; border: 1px solid #dee2e6; margin-top: 15px; }
+        
+        /* Estilos da Grade de Histórico Minimizado (Retrátil) */
+        .historico-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .historico-item { background: #ffffff; border: 1px solid #e0e0e0; border-left: 5px solid #007bff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s; }
+        .historico-item[open] { border-left-color: #28a745; box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
+        
+        /* Cabeçalho clicável que ativa a expansão */
+        .historico-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #666; cursor: pointer; list-style: none; font-weight: bold; user-select: none; }
+        .historico-header::-webkit-details-marker { display: none; } /* Esconde a seta padrão */
+        
+        .historico-data { font-weight: bold; color: #1a1a1a; font-size: 15px; }
+        .seta-indicadora { font-size: 12px; color: #007bff; font-weight: normal; }
+        
+        .historico-item[open] .seta-indicadora { color: #28a745; }
+        
+        /* Bloco interno expandido */
+        .conteudo-expandido { padding: 0 15px 15px 15px; border-top: 1px dashed #e0e0e0; margin-top: 5px; padding-top: 15px; }
+        .historico-texto { font-size: 14px; line-height: 1.5; white-space: pre-line; color: #444; }
+        .historico-galeria { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .historico-thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; }
+    </style>
+    </head>
+<body>
+    <div class="box">
+        <h2>Editar Projeto #{{.ID}}</h2>
+        <form action="/editar" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="id" value="{{.ID}}">
+            
+            <div class="form-group">
+                <label>Nome do Projeto</label>
+                <input type="text" name="nome_projeto" value="{{.Nome}}" required>
+            </div>
+            <div class="form-group">
+                <label>Gerente do Projeto</label>
+                <input type="text" name="gerente" value="{{.Gerente}}" required>
+            </div>
+            <div class="form-group">
+                <label>Resumo Executivo</label>
+                <textarea name="resumo" rows="3">{{.Resumo}}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Participantes deste projeto</label>
+                <textarea name="participantes" rows="2">{{.Participantes}}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Observações deste projeto</label>
+                <textarea name="observacoes" rows="2">{{.Observacoes}}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Introdução</label>
+                <textarea name="introducao" rows="4" placeholder="Digite uma introdução sobre o contexto ou objetivo do projeto...">{{.Introducao}}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Localização</label>
+                <textarea name="localizacao" rows="2" placeholder="Endereço, coordenadas, galpões ou subestações onde o projeto ocorre...">{{.Localizacao}}</textarea>
+            </div>
+             <h3>Tarefas do Projeto</h3>
+            <div class="tarefa-header">
+                <div>Nome da Tarefa</div>
+                <div>Responsável</div>
+                <div>Data Início</div>
+                <div>Data Fim</div>
+                <div class="center-lbl">Progresso (%)</div>
+                <div class="center-lbl">Concluído?</div>
+                <div class="center-lbl">Ação</div>
+            </div>
+            <div id="tarefas-container">
+                {{ range .Tarefas }}
+                <div class="tarefa-row">
+                    <input type="text" name="tarefa_nome[]" value="{{.Nome}}" required>
+                    <input type="text" name="tarefa_resp[]" value="{{.Responsavel}}" required>
+                    <input type="date" name="tarefa_inicio[]" value="{{.DataInicio.Format "2006-01-02"}}" required>
+                    <input type="date" name="tarefa_fim[]" value="{{.DataFim.Format "2006-01-02"}}" required>
+                    
+                    <!-- Campo de Progresso Numérico + Barra Visual -->
+                    <div class="progress-container">
+                        <input type="number" name="tarefa_progresso[]" value="{{.Progresso}}" min="0" max="100" placeholder="%" required oninput="atualizarBarraVisual(this)">
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: {{.Progresso}}%;"></div>
+                        </div>
+                    </div>
+
+                    <input type="checkbox" {{ if .Concluido }}checked{{ end }} onchange="vincularConclusao(this)">
+                    <input type="hidden" name="tarefa_concluido[]" value="{{ if .Concluido }}true{{ else }}false{{ end }}">
+                    <button type="button" class="btn-del" onclick="removerLinha(this)">X</button>
+                </div>
+                {{ else }}
+                <div class="tarefa-row">
+                    <input type="text" name="tarefa_nome[]" placeholder="Nova Tarefa" required>
+                    <input type="text" name="tarefa_resp[]" placeholder="Responsável" required>
+                    <input type="date" name="tarefa_inicio[]" required>
+                    <input type="date" name="tarefa_fim[]" required>
+                    
+                    <div class="progress-container">
+                        <input type="number" name="tarefa_progresso[]" value="0" min="0" max="100" placeholder="%" required oninput="atualizarBarraVisual(this)">
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <input type="checkbox" onchange="vincularConclusao(this)">
+                    <input type="hidden" name="tarefa_concluido[]" value="false">
+                    <button type="button" class="btn-del" onclick="removerLinha(this)">X</button>
+                </div>
+                {{ end }}
+            </div>
+            <button type="button" class="btn-add" onclick="adicionarTarefa()">+ Adicionar Tarefa</button>
+	    <!-- ADICIONAR NOVO RELATÓRIO DIÁRIO DENTRO DA TELA DE EDIÇÃO -->
+            <h3>Lançar Novo Relatório Diário</h3>
+            <div class="diario-block" id="bloco-diario">
+                <div class="form-group" style="width: 250px;">
+                    <label>Data do Relatório</label>
+                    <input type="date" id="diario_data" name="diario_data">
+                </div>
+                <div class="form-group">
+                    <label>Descrição das Atividades, Ocorrências e Pendências</label>
+                    <textarea id="diario_descricao" name="diario_descricao" rows="5" placeholder="Digite aqui o andamento do dia..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Fotos / Evidências deste Relatório Diário</label>
+                    <label for="imagens_diario" class="btn-upload-custom">Selecionar Fotos do Dia</label>
+                    <input type="file" id="imagens_diario" name="imagens_diario[]" class="input-file-oculto" accept="image/*" multiple onchange="visualizarImagens(this)">
+                    <div id="preview-imagens-novas-diario" class="preview-container"></div>
+                </div>
+                
+                <button type="button" onclick="enviarRelatorioDiario()" style="background: #17a2b8; margin-top: 10px;">+ Registrar Relatório Diário</button>
+            </div>
+
+            <!-- EXIBIÇÃO HISTÓRICA DOS RELATÓRIOS DO PROJETO -->
+            <h3>Histórico de Relatórios Diários Cadastrados</h3>
+            <div class="historico-grid" id="historico-lista">
+                {{ if .Relatorios }}
+                    {{ range .Relatorios }}
+                    <details class="historico-item">
+                        <summary class="historico-header">
+                            <span class="historico-data"> {{ .Data.Format "02/01/2006" }}</span>
+                            <span class="seta-indicadora">Clique para abrir 🔽</span>
+                        </summary>
+                        
+                        <div class="conteudo-expandido">
+                            <div class="historico-texto">{{ .Descricao }}</div>
+                            
+                            {{ if .Imagens }}
+                            <div class="historico-galeria">
+                                {{ range .Imagens }}
+                                <a href="{{ . }}" target="_blank">
+                                    <img src="{{ . }}" class="historico-thumb" alt="Evidência Visual">
+                                </a>
+                                {{ end }}
+                            </div>
+                            {{ end }}
+                        </div>
+                    </details>
+                    {{ end }}
+                {{ else }}
+                    <p id="msg-vazio" style="color: #6c757d; font-style: italic; margin-top: 10px;">Nenhum relatório diário foi cadastrado para este projeto até o momento.</p>
+                {{ end }}
+            </div>
+
+            <!-- GALERIA GERAL DO PROJETO -->
+            {{ if .Imagens }}
+            <h3>Arquivos e Evidências Gerais do Projeto</h3>
+            <div class="galeria-atual">
+                {{ range .Imagens }}
+                <div class="item-foto" style="text-align: center; border: 1px solid #ddd; padding: 10px; border-radius: 6px; background: #fff;">
+                    <script>
+                        var url = "{{ . }}";
+                        var extensao = url.split('.').pop().toLowerCase();
+                        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extensao)) {
+                            document.write('<img src="{{ . }}" class="preview-img" alt="Foto do Projeto">');
+                        } else {
+                            document.write('<div style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: #e9ecef; border-radius: 6px; font-weight: bold; color: #495057; font-size: 12px; border: 1px solid #ccc;">📄 .' + extensao.toUpperCase() + '</div>');
+                        }
+                    </script>
+
+                    <input type="hidden" name="fotos_existentes[]" value="{{ . }}">
+                    <br>
+                    <a href="{{ . }}" target="_blank" style="font-size: 12px; text-decoration: none; color: #007bff; display: block; margin: 5px 0;">Visualizar</a>
+                    <button type="button" class="btn-del" style="width: 100%; padding: 4px; font-size: 11px;" onclick="excluirFotoExistente(this)">Excluir</button>
+                </div>
+                {{ end }}
+            </div>
+            {{ end }}
+            <!-- SEÇÃO DE LISTA DE MATERIAIS -->
+            <h3>Lista de Materiais</h3>
+            <button type="button" class="btn-add" onclick="adicionarMaterial()">+ Adicionar Material</button>
+
+            <div class="tarefa-header" style="grid-template-columns: 1fr 5fr 2fr 1fr; background: #e2e3e5;">
+                <div>Item</div>
+                <div>Descrição do Material</div>
+                <div>Quantidade</div>
+                <div class="center-lbl">Ação</div>
+            </div>
+
+            <div id="materiais-container">
+                {{range .Materiais}}
+                <div class="tarefa-row mat-row" style="grid-template-columns: 1fr 5fr 2fr 1fr;">
+                    <input type="number" name="mat_item[]" value="{{.Item}}" readonly style="background: #f0f0f0; text-align: center;">
+                    <input type="text" name="mat_descricao[]" value="{{.Descricao}}" required>
+                    <input type="number" name="mat_quantidade[]" value="{{.Quantidade}}" min="1" required>
+                    <button type="button" class="btn-del" onclick="removerMaterial(this)">X</button>
+                </div>
+                {{end}}
+            </div>
+
+            <script>
+                function renumerarItens() {
+                    const linhas = document.querySelectorAll("#materiais-container .mat-row");
+                    linhas.forEach((linha, index) => {
+                        linha.querySelector('input[name="mat_item[]"]').value = index + 1;
+                    });
+                }
+
+                function adicionarMaterial() {
+                    const container = document.getElementById("materiais-container");
+                    const row = document.createElement("div");
+                    row.className = "tarefa-row mat-row";
+                    row.style.gridTemplateColumns = "1fr 5fr 2fr 1fr";
+                    row.innerHTML = `
+                        <input type="number" name="mat_item[]" readonly style="background: #f0f0f0; text-align: center;">
+                        <input type="text" name="mat_descricao[]" placeholder="Descrição do Material" required>
+                        <input type="number" name="mat_quantidade[]" value="1" min="1" required>
+                        <button type="button" class="btn-del" onclick="removerMaterial(this)">X</button>
+                    `;
+                    container.appendChild(row);
+                    renumerarItens();
+                }
+
+                function removerMaterial(botao) {
+                    botao.parentElement.remove();
+                    renumerarItens();
+                }
+            </script>
+            <div class="form-group">
+                <h3>Encerramento</h3>
+                <textarea name="encerramento" rows="2" placeholder="Encerramento considerações finais do projeto...">{{.Encerramento}}</textarea>
+            </div>
+            
+            <br><br>
+            <a href="/" class="btn-voltar">Cancelar</a>
+            <button type="submit" style="background: #28a745;">Salvar Alterações do Projeto</button>
+        </form>
+    </div>
+        <!-- LOGICA SCRIPT JAVASCRIPT PARA ENVIO ASSÍNCRONO (AJAX) -->
+    <script>
+        function atualizarBarraVisual(input) {
+            let valor = parseInt(input.value) || 0;
+            if (valor > 100) { valor = 100; input.value = 100; }
+            if (valor < 0) { valor = 0; input.value = 0; }
+            
+            // Atualiza a largura da barra verde
+            const barra = input.parentElement.querySelector(".progress-bar-fill");
+            if (barra) barra.style.width = valor + "%";
+
+            // Se chegar a 100%, marca o checkbox de concluído automaticamente
+            const row = input.closest(".tarefa-row");
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            const hidden = row.querySelector('input[name="tarefa_concluido[]"]');
+            
+            if (valor === 100) {
+                if (checkbox) checkbox.checked = true;
+                if (hidden) hidden.value = "true";
+            } else {
+                if (checkbox) checkbox.checked = false;
+                if (hidden) hidden.value = "false";
+            }
+        }
+
+        function vincularConclusao(checkbox) {
+            const row = checkbox.closest(".tarefa-row");
+            const hidden = row.querySelector('input[name="tarefa_concluido[]"]');
+            const progressoInput = row.querySelector('input[name="tarefa_progresso[]"]');
+            const barra = row.querySelector(".progress-bar-fill");
+
+            if (checkbox.checked) {
+                if (hidden) hidden.value = "true";
+                if (progressoInput) progressoInput.value = 100;
+                if (barra) barra.style.width = "100%";
+            } else {
+                if (hidden) hidden.value = "false";
+                if (progressoInput && progressoInput.value == 100) {
+                    progressoInput.value = 90; // Regressa para 90% se desmarcar
+                    if (barra) barra.style.width = "90%";
+                }
+            }
+        }
+
+        async function enviarRelatorioDiario() {
+            const dataInput = document.getElementById("diario_data");
+            const descricaoInput = document.getElementById("diario_descricao");
+            const imagensInput = document.getElementById("imagens_diario");
+            
+            const projetoIdInput = document.querySelector('input[name="id"]');
+            const projetoId = projetoIdInput ? projetoIdInput.value : "";
+
+            if (!dataInput.value || !descricaoInput.value.trim()) {
+                alert("Por favor, preencha a Data e a Descrição do relatório diário antes de salvar.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("projeto_id", projetoId);
+            formData.append("data", dataInput.value);
+            formData.append("descricao", descricaoInput.value);
+
+            if (imagensInput.files) {
+                Array.from(imagensInput.files).forEach(file => {
+                    formData.append("imagens_diario[]", file);
+                });
+            }
+
+            try {
+                const resposta = await fetch("/projetos/diario", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!resposta.ok) {
+                    throw new Error("Erro do servidor ao salvar o relatório.");
+                }
+
+                const resultado = await resposta.json();
+
+                const msgVazio = document.getElementById("msg-vazio");
+                if (msgVazio) msgVazio.remove();
+
+                const dataFormatada = dataInput.value.split('-').reverse().join('/');
+
+                let galeriaHtml = '';
+                if (resultado.imagens && resultado.imagens.length > 0) {
+                    galeriaHtml = `<div class="historico-galeria">`;
+                    resultado.imagens.forEach(url => {
+                        galeriaHtml += `
+                            <a href="${url}" target="_blank">
+                                <img src="${url}" class="historico-thumb" alt="Evidência Visual">
+                            </a>`;
+                    });
+                    galeriaHtml += `</div>`;
+                }
+
+                const novoItem = document.createElement("details");
+                novoItem.className = "historico-item";
+                novoItem.open = true;
+                novoItem.style.borderLeftColor = "#17a2b8";
+                novoItem.innerHTML = `
+                    <summary class="historico-header">
+                        <span class="historico-data">📅 ${dataFormatada}</span>
+                        <span class="seta-indicadora">Clique para fechar </span>
+                    </summary>
+                    <div class="conteudo-expandido">
+                        <div class="historico-texto">${descricaoInput.value}</div>
+                        ${galeriaHtml}
+                    </div>
+                `;
+
+                const lista = document.getElementById("historico-lista");
+                lista.insertBefore(novoItem, lista.firstChild);
+
+                dataInput.value = "";
+                descricaoInput.value = "";
+                imagensInput.value = "";
+                document.getElementById("preview-imagens-novas-diario").innerHTML = "";
+
+                alert("Diário de bordo registrado com sucesso!");
+
+            } catch (error) {
+                console.error(error);
+                alert("Falha ao registrar o relatório. Verifique seu backend.");
+            }
+        }
+
+        function adicionarTarefa() {
+            const container = document.getElementById("tarefas-container");
+            const row = document.createElement("div");
+            row.className = "tarefa-row";
+            row.innerHTML = `
+                <input type="text" name="tarefa_nome[]" placeholder="Nova Tarefa" required>
+                <input type="text" name="tarefa_resp[]" placeholder="Responsável" required>
+                <input type="date" name="tarefa_inicio[]" required>
+                <input type="date" name="tarefa_fim[]" required>
+                <div class="progress-container">
+                    <input type="number" name="tarefa_progresso[]" value="0" min="0" max="100" placeholder="%" required oninput="atualizarBarraVisual(this)">
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+                </div>
+                <input type="checkbox" onchange="vincularConclusao(this)">
+                <input type="hidden" name="tarefa_concluido[]" value="false">
+                <button type="button" class="btn-del" onclick="removerLinha(this)">X</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function removerLinha(botao) {
+            botao.parentElement.remove();
+        }
+
+        function visualizarImagens(input) {
+            const container = input.parentElement.querySelector(".preview-container") || input.nextElementSibling;
+            if (container) {
+                container.innerHTML = "";
+                if (input.files) {
+                    Array.from(input.files).forEach(file => {
+                        if (file.type.startsWith('image/')) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const img = document.createElement("img");
+                                img.className = "preview-img";
+                                img.src = e.target.result;
+                                container.appendChild(img);
+                            }
+                            reader.readAsDataURL(file);
+                        }
+                    });
+                }
+            }
+        }
+
+        function excluirFotoExistente(botao) {
+            botao.parentElement.remove();
+        }
+    </script>
+</body>
+</html>

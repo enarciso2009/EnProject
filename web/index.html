@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Projetos Padronizados</title>
+    <style>
+    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 40px; color: #333; }
+    /* Aumentamos a largura máxima para dar mais margem às tabelas grandes */
+    .container { max-width: 1200px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+    .btn-novo { background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; }
+    .btn-novo:hover { background: #218838; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+    th { background-color: #f8f9fa; font-weight: bold; }
+    
+    /* Nova classe para a coluna de ações que impede os botões de quebrarem de linha */
+    .coluna-acoes {
+        white-space: nowrap;
+        width: 1%; /* Força a coluna a ocupar apenas o espaço necessário dos botões */
+    }
+    
+    /* Ajustamos o padding (espaçamento interno) para os botões ficarem mais compactos */
+    .badge-acao { 
+        display: inline-block; 
+        padding: 5px 10px; 
+        border-radius: 4px; 
+        text-decoration: none; 
+        font-size: 13px; 
+        font-weight: bold; 
+        margin-right: 4px; 
+        color: white; 
+    }
+    .badge-acao:last-child {
+        margin-right: 0;
+    }
+    .ver-html { background: #17a2b8; }
+    .ver-html:hover { background: #138496; }
+    .bx-excel { background: #217346; }
+    .bx-excel:hover { background: #1a5c38; }
+    .status-Finalizado { background: #e2f0d9; color: #385723; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+    .status-Em-Andamento { background: #fff2cc; color: #7f6000; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+    .status-Atrasado { background: #fce4d6; color: #c65911; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+    
+    /* Estilos para a Barra de Navegação do Topo */
+    .nav-topo {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 12px;
+        max-width: 1000px;
+        margin: 20px auto 20px auto;
+        padding: 0 10px;
+    }
+    .btn-nav {
+        padding: 8px 14px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: bold;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+    /* Força o botão de projeto a ir para o extremo esquerdo */
+    .btn-projeto-novo {
+        background-color: #007bff;
+        color: white;
+         
+    }
+    .btn-projeto-novo:hover {
+        background-color: #0056b3;
+    }
+    .btn-user-novo {
+        background-color: #28a745;
+        color: white;
+    }
+    .btn-user-novo:hover {
+        background-color: #218838;
+    }
+    .btn-logout {
+        background-color: #dc3545;
+        color: white;
+    }
+    .btn-logout:hover {
+        background-color: #c82333;
+    }
+    </style>
+
+</head>
+<body>
+    <!-- BARRA DE NAVEGAÇÃO SUPERIOR REORGANIZADA -->
+    <div class="nav-topo">
+        <!-- Lado Esquerdo -->
+        <a href="/novo" class="btn-nav btn-projeto-novo">➕ Novo Projeto</a>
+        
+        <!-- Lado Direito -->
+        <a href="/usuario/novo" class="btn-nav btn-user-novo">👤 Novo Usuário</a>
+        <a href="/logout" class="btn-nav btn-logout">🚪 Sair</a>
+    </div>
+    <div class="container">
+        <div class="top-bar">
+            <h2>Gestão e Acompanhamento de Projetos (EnProject)</h2>
+            
+        </div>
+
+        <h3>📋 Portfólio de Projetos Gravados</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome do Projeto</th>
+                    <th>Gerente Responsável</th>
+                    <th>Status Atual</th>
+                    <!--<th>Esforço Alocado</th> -->
+                    <th>Ações de Acompanhamento</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .}}
+                <tr>
+                    <td>{{.ID}}</td>
+                    <td><strong>{{.Nome}}</strong></td>
+                    <td>{{.Gerente}}</td>
+                    <td><span class="status-{{.StatusGeral}}">{{.StatusGeral}}</span></td>
+                    <!--<td>{{.TotalHoras}}h</td> -->
+                    <td>
+                        <a href="/editar?id={{.ID}}" class="badge-acao" style="background: #007bff;">✏️ Editar</a>
+                        <a href="/download/html?id={{.ID}}" target="_blank" class="badge-acao ver-html">🌐 Visualizar Report</a>
+                       <!-- <a href="/download/excel?id={{.ID}}" class="badge-acao bx-excel">📊 Exportar Excel</a> -->
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #6c757d; padding: 30px;">
+                        Nenhum projeto cadastrado no banco de dados até o momento. Clique em "+ Cadastrar Novo Projeto" para começar!
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

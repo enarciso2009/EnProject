@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+   
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; color: #333; background: #fafafa; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 25px; background: white; }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+        th { background-color: #f8f9fa; color: #495057; font-weight: bold; }
+        
+        /* ALTERADO: Adicionado Flexbox para alinhar o conteúdo e o logo nas extremidades */
+        .header-box { background: #212529; color: white; padding: 25px; border-radius: 6px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header-content { flex: 1; }
+        .header-box h1 { margin: 0 0 10px 0; font-size: 28px; }
+        .meta-info { display: flex; gap: 30px; font-size: 15px; color: #ccc; }
+        
+        /* ADICIONADO: Estilização do container do Logotipo */
+        .header-logo { max-width: 180px; max-height: 70px; object-fit: contain; background: transparent; padding: 5px; }
+
+        .resumo-section { background: #e9ecef; padding: 15px; border-left: 5px solid #6c757d; border-radius: 4px; margin-top: 20px; }
+        .status-Finalizado { color: #28a745; font-weight: bold; }
+        .status-Em-Andamento { color: #ffc107; font-weight: bold; }
+        .status-Atrasado { color: #dc3545; font-weight: bold; }
+
+        /* Estilos da Barra de Progresso para Impressão */
+        .print-progress-bg { background-color: #e9ecef; border: 1px solid #ccc; border-radius: 4px; height: 12px; width: 100px; display: inline-block; vertical-align: middle; overflow: hidden; margin-right: 8px; }
+        .print-progress-fill { background-color: #28a745; height: 100%; display: block; }
+        .print-progress-text { font-weight: bold; font-size: 13px; display: inline-block; vertical-align: middle; }
+
+        /* Estilos da Galeria de Fotos */
+        .galeria-section { margin-top: 35px; }
+        .galeria-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; }
+        .galeria-item { width: 180px; height: 130px; border-radius: 6px; border: 1px solid #dee2e6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; background: #f8f9fa; }
+        .galeria-item img { width: 100%; height: 100%; object-fit: cover; }
+        .sem-fotos { color: #6c757d; font-style: italic; font-size: 14px; margin-top: 10px; }
+
+        /* Blocos do Diário de Bordo para o Relatório */
+        .diario-item-report { background: #fff; border: 1px solid #dee2e6; border-left: 5px solid #17a2b8; border-radius: 6px; padding: 15px; margin-top: 15px; page-break-inside: avoid; }
+        .diario-meta-report { font-weight: bold; color: #1a1a1a; font-size: 15px; margin-bottom: 8px; border-bottom: 1px dashed #dee2e6; padding-bottom: 5px; }
+        .diario-texto-report { font-size: 14px; line-height: 1.5; white-space: pre-line; color: #444; }
+
+        /* Regras essenciais para garantir cores na geração de PDFs e Impressão física */
+        @media print {
+            body { background: white; margin: 20px; }
+            .container { box-shadow: none; padding: 0; max-width: 100%; }
+            .header-box { background: #212529 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; display: flex !important; }
+            .meta-info span { color: #fff !important; }
+            .resumo-section { background: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            th { background-color: #f8f9fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-progress-bg { background-color: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-progress-fill { background-color: #28a745 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .diario-item-report { background: #fff !important; border: 1px solid #dee2e6 !important; border-left: 5px solid #17a2b8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+    
+    
+        <div class="container">
+            <!-- ADICIONADO: Insira o caminho da logo de sua empresa abaixo -->
+            <div style="text-align: right; margin-bottom: 20px; width: 100%;">
+                <img src="data:image/png;base64,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",
+                style="max-width:220px; max-height: 85px; object-fit: contain;"
+                alt="Logo Empresa">
+            </div>
+                            
+        <!-- ALTERADO: Estrutura interna da header-box adaptada para receber a imagem -->
+        <div class="header-box">
+            <div class="header-content">
+                <h1>{{.Nome}}</h1>
+                <div class="meta-info">
+                    <span><strong>Gestor:</strong> {{.Gerente}}</span>
+                    <span><strong>Status:</strong> <span class="status-{{.StatusGeral}}">{{.StatusGeral}}</span></span>
+                    <span><strong>Resp. Técnico/Fornecedor:</strong> Nuno Oliveira </span>
+                </div>
+            </div>
+            
+            
+        </div>
+                <!-- ADICIONADO: Documento de Referência / Normas -->
+        <div class="resumo-section" style="margin-top: 20px; border-left: 5px solid #212529; background: #f8f9fa;">
+            <strong style="font-size: 15px; color: #212529;">Documento de Referência/Normas:</strong>
+            <ul style="margin: 8px 0 0 0; padding-left: 20px; color: #495057; font-size: 14px; line-height: 1.6;">
+                <li><strong>ABNT</strong> - Associação Brasileira de Normas Técnicas;</li>
+                <li><strong>NR-10</strong> Segurança em Instalações e Serviços em Eletricidade;</li>
+                <li><strong>NBR-5410</strong> Norma Técnica Brasileira – Instalações Elétricas em Baixa Tensão;</li>
+                <li><strong>NBR 13488</strong> fibra óptica tipo monomodo de dispersão normal;</li>
+                <li><strong>NR-35</strong> Trabalho em altura.</li>
+            </ul>
+        </div>
+        <!-- ADICIONADO: Documentos Resultantes -->
+        <div class="resumo-section" style="margin-top: 20px; border-left: 5px solid #212529; background: #f8f9fa;">
+            <strong style="font-size: 15px; color: #212529;">Documento de Resultantes:</strong>
+            <ul style="margin: 8px 0 0 0; padding-left: 20px; color: #495057; font-size: 14px; line-height: 1.6;">
+                <li>Relatório Fotografico</li>
+                <li>Descrição das Atividades;</li>
+                <li>Lista de Materiais;</li>
+            </ul>
+        </div>
+        <!-- ADICIONADO: SUMÁRIO -->
+        <div class="resumo-section" style="margin-top: 20px; border-left: 5px solid #212529; background: #f8f9fa;">
+            <strong style="font-size: 15px; color: #212529;">SUMÁRIO:</strong>
+            <ul style="margin: 8px 0 0 0; padding-left: 20px; color: #495057; font-size: 14px; line-height: 1.6;">
+                <li><strong>Resumo Executivo do Status</strong></li>
+                <li><strong>Participantes do Projeto</strong></li>
+                <li><strong>Observações do Projeto</strong></li>
+                <li><strong>Introdução</strong></li>
+                <li><strong>Localização / Endereço</strong></li>
+                <li><strong>Detalhamento Técnico / Tarefas</strong></li>
+                <li><strong>Histórico Atividades Diárias</strong></li>
+                <li><strong>Evidências Visuais Gerais do Projeto</strong></li>
+                <li><strong>Encerramento / Considerações Finais</strong></li>
+            </ul>
+        </div>
+        
+        <div class="resumo-section">
+            <strong>Resumo Executivo do Status:</strong>
+            <p style="margin: 5px 0 0 0; color: #495057;">{{.Resumo}}</p>
+        </div>
+        <div class="resumo-section" style="margin-top: 15px; border-left: 5px solid #007bff; background: #f1f3f9;">
+            <strong>Participantes do Projeto:</strong>
+            <p style="margin: 5px 0 0 0; color: #495057;">{{.Participantes}}</p>
+        </div>
+        <div class="resumo-section" style="margin-top: 15px; border-left: 5px solid #007bff; background: #f1f3f9;">
+            <strong>Observações do Projeto:</strong>
+            <p style="margin: 5px 0 0 0; color: #495057;">{{.Observacoes}}</p>
+        </div>
+        <!-- ADICIONADO: Caixa de Introdução -->
+        {{if .Introducao}}
+        <div class="resumo-section" style="margin-top: 15px; border-left: 5px solid #28a745; background: #f4f9f4;">
+            <strong>Introdução:</strong>
+            <p style="margin: 5px 0 0 0; color: #495057; white-space: pre-line;">{{.Introducao}}</p>
+        </div>
+        {{end}}
+
+        <!-- ADICIONADO: Caixa de Localização -->
+        {{if .Localizacao}}
+        <div class="resumo-section" style="margin-top: 15px; border-left: 5px solid #ffc107; background: #fffdf5;">
+            <strong>Localização / Endereço:</strong>
+            <p style="margin: 5px 0 0 0; color: #495057; white-space: pre-line;">{{.Localizacao}}</p>
+        </div>
+        {{end}}
+        
+        <h3 style="margin-top: 35px; color: #212529; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">Detalhamento Técnico das Tarefas</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome da Entrega / Tarefa</th>
+                    <th>Responsável</th>
+                    <th style="width: 130px;">Data Início</th>
+                    <th style="width: 130px;">Data Fim</th>
+                    <th style="width: 160px; text-align: left;">Progresso</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Tarefas}}
+                <tr>
+                    <td><strong>{{.Nome}}</strong></td>
+                    <td>{{.Responsavel}}</td>
+                    <td>{{.DataInicio.Format "02/01/2006"}}</td>
+                    <td>{{.DataFim.Format "02/01/2006"}}</td>
+                    <td>
+                        <div class="print-progress-bg">
+                            <div class="print-progress-fill" style="width: {{.Progresso}}%;"></div>
+                        </div>
+                        <span class="print-progress-text">{{.Progresso}}%</span>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+
+        <h3 style="margin-top: 35px; color: #212529; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">📦 Lista de Materiais Aplicados</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 80px; text-align: center;">Item</th>
+                    <th>Descrição do Material</th>
+                    <th style="width: 150px; text-align: right;">Quantidade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Materiais}}
+                <tr>
+                    <td style="text-align: center; color: #6c757d;">{{.Item}}</td>
+                    <td><strong>{{.Descricao}}</strong></td>
+                    <td style="text-align: right; font-weight: bold; color: #17a2b8;">{{.Quantidade}}</td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="3" style="color: #6c757d; font-style: italic; text-align: center;">Nenhum material foi alocado para este projeto.</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+        <!-- Histórico de Relatórios Diários -->
+        <div class="galeria-section">
+            <h3 style="color: #212529; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">📖 Histórico Atividades Diárias </h3>
+            {{range .Relatorios}}
+            <div class="diario-item-report">
+                <div class="diario-meta-report">📅 Relatório do Dia: {{.Data.Format "02/01/2006"}}</div>
+                <div class="diario-texto-report">{{.Descricao}}</div>
+                
+                {{if .Imagens}}
+                <div class="galeria-grid" style="margin-top: 10px;">
+                    {{range .Imagens}}
+                    <div class="galeria-item" style="width: 120px; height: 90px;">
+                        <img src="{{.}}" alt="Evidência do Diário">
+                    </div>
+                    {{end}}
+                </div>
+                {{end}}
+            </div>
+            {{else}}
+            <p class="sem-fotos">Nenhum relatório diário foi registrado para este projeto.</p>
+            {{end}}
+        </div>
+
+        <!-- Galeria de Evidências/Fotos Gerais do Projeto -->
+        <div class="galeria-section">
+            <h3 style="color: #212529; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">📸 Evidências Visuais Gerais do Projeto</h3>
+            <h4 style="margin: 15px 0 5px 0; color: #495057; font-size: 16px;">Galeria de Fotos Anexadas</h4>
+            <p style="margin: 0 0 15px 0; color: #6c757d; font-size: 14px;">Imagens vinculadas à pasta geral de arquivos:</p>
+                        
+            <div class="galeria-grid">
+                {{range .Imagens}}
+                <div class="galeria-item">
+                    <img src="{{.}}" alt="Evidência do Projeto">
+                </div>
+                {{else}}
+                <p class="sem-fotos">Nenhuma evidência fotográfica geral foi anexada a este relatório.</p>
+                {{end}}
+            </div>
+        </div>
+                <!-- ADICIONADO: Caixa de Encerramento (Final do documento) -->
+        {{if .Encerramento}}
+        <div class="resumo-section" style="margin-top: 30px; border-left: 5px solid #17a2b8; background: #f1f9fa; page-break-inside: avoid;">
+            <strong>Encerramento / Considerações Finais:</strong>
+            <p style="margin: 5px 0 0 0; color: #495057; white-space: pre-line;">{{.Encerramento}}</p>
+        </div>
+        {{end}}
+                <!-- ASSINATURA INSTITUCIONAL FIXA NO FINAL -->
+        <div style="margin-top: 50px; padding-top: 20px; border-top: 2px solid #dee2e6; page-break-inside: avoid; max-width: 300px;">
+            <p style="margin: 0; font-size: 14px; color: #1a1a1a; font-weight: bold; line-height: 1.6;">
+                TRACEVIA S.A.
+            </p>
+            <p style="margin: 0; font-size: 14px; color: #495057; line-height: 1.6;">
+                Nuno Oliveira<br>
+                <span style="color: #6c757d;">E-mail:</span> <a href="mailto:nuno.oliveira@tracevia.com.br" style="color: #007bff; text-decoration: none;">nuno.oliveira@tracevia.com.br</a><br>
+                <span style="color: #6c757d;">Fone:</span> +55 (11) 99353-3872
+            </p>
+        </div>
+
+
+    </div>
+</body>
+</html>
