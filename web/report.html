@@ -53,11 +53,58 @@
             .print-progress-fill { background-color: #28a745 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .diario-item-report { background: #fff !important; border: 1px solid #dee2e6 !important; border-left: 5px solid #17a2b8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
+        /* Cria um container que agrupa o título e o conteúdo para evitar quebras entre eles */
+        .bloco-impressao {
+            page-break-inside: avoid; /* Para navegadores antigos */
+            break-inside: avoid;      /* Padrão moderno */
+            margin-bottom: 25px;
+        }
+
+        /* Evita que títulos fiquem sozinhos no fim da página (força quebra antes se necessário) */
+        h2 {
+            page-break-after: avoid;
+            break-after: avoid;
+        }
+
+        /* Força uma quebra de página ANTES de seções grandes, se você quiser que comecem sempre em folha nova */
+        .forcar-nova-pagina {
+            page-break-before: always;
+            break-before: always;
+        }
+        /* Estilo do botão flutuante na tela do navegador */
+        .btn-imprimir-report {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #28a745; /* Verde Executivo */
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+            z-index: 1000; /* Garante que fica em cima de tudo */
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn-imprimir-report:hover {
+            background-color: #218838;
+            transform: scale(1.02);
+        }
+
+        /* 🚨 O PULO DO GATO: Esconde o botão completamente na hora de imprimir/gerar PDF */
+        @media print {
+            .btn-imprimir-report {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
     
-    
+       
         <div class="container">
             <!-- ADICIONADO: Insira o caminho da logo de sua empresa abaixo -->
             <div style="text-align: right; margin-bottom: 20px; width: 100%;">
@@ -65,7 +112,8 @@
                 style="max-width:220px; max-height: 85px; object-fit: contain;"
                 alt="Logo Empresa">
             </div>
-                            
+         <!-- Botão de impressão profissional -->
+         <button class="btn-imprimir-report" onclick="window.print()">Imprimir / Salvar PDF</button>                    
         <!-- ALTERADO: Estrutura interna da header-box adaptada para receber a imagem -->
         <div class="header-box">
             <div class="header-content">
@@ -114,18 +162,18 @@
             </ul>
         </div>
         
-        <div class="resumo-section">
+        <div class="resumo-section bloco-impressao">
             <strong>Resumo Executivo do Status:</strong>
             <p style="margin: 5px 0 0 0; color: #495057;">{{.Resumo}}</p>
         </div>
         
-        <div class="resumo-section" style="margin-top: 15px; border-left: 5px solid #007bff; background: #f1f3f9;">
+        <div class="resumo-section bloco-impressao" style="margin-top: 15px; border-left: 5px solid #007bff; background: #f1f3f9;">
             <strong>Observações do Projeto:</strong>
             <p style="margin: 5px 0 0 0; color: #495057;">{{.Observacoes}}</p>
         </div>
         <!-- ADICIONADO: Caixa de Introdução -->
         {{if .Introducao}}
-        <div class="resumo-section" style="margin-top: 15px; border-left: 5px solid #28a745; background: #f4f9f4;">
+        <div class="resumo-section bloco-impressao" style="margin-top: 15px; border-left: 5px solid #28a745; background: #f4f9f4;">
             <strong>Introdução:</strong>
             <p style="margin: 5px 0 0 0; color: #495057; white-space: pre-line;">{{.Introducao}}</p>
         </div>
@@ -133,7 +181,7 @@
 
         <!-- ADICIONADO: Caixa de Localização -->
         {{if .Localizacao}}
-        <div class="resumo-section" style="margin-top: 15px; border-left: 5px solid #ffc107; background: #fffdf5;">
+        <div class="resumo-section bloco-impressao" style="margin-top: 15px; border-left: 5px solid #ffc107; background: #fffdf5;">
             <strong>Localização / Endereço:</strong>
             <p style="margin: 5px 0 0 0; color: #495057; white-space: pre-line;">{{.Localizacao}}</p>
         </div>
@@ -221,7 +269,7 @@
                 {{if .Imagens}}
                 <div class="galeria-grid" style="margin-top: 10px;">
                     {{range .Imagens}}
-                    <div class="galeria-item" style="width: 120px; height: 90px;">
+                    <div class="galeria-item" style="width: 220px; height: 190px;">
                         <img src="{{.}}" alt="Evidência do Diário">
                     </div>
                     {{end}}
@@ -251,7 +299,7 @@
         </div>
                 <!-- ADICIONADO: Caixa de Encerramento (Final do documento) -->
         {{if .Encerramento}}
-        <div class="resumo-section" style="margin-top: 30px; border-left: 5px solid #17a2b8; background: #f1f9fa; page-break-inside: avoid;">
+        <div class="resumo-section bloco-impressao" style="margin-top: 30px; border-left: 5px solid #17a2b8; background: #f1f9fa; page-break-inside: avoid;">
             <strong>Encerramento / Considerações Finais:</strong>
             <p style="margin: 5px 0 0 0; color: #495057; white-space: pre-line;">{{.Encerramento}}</p>
         </div>
