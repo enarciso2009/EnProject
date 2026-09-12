@@ -9,7 +9,7 @@
         h2 { border-bottom: 1px solid #ddd; padding-bottom: 10px; color: #333; }
         .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
         label { font-weight: bold; margin-bottom: 5px; }
-        input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         button { background: #28a745; color: white; border: none; padding: 12px; border-radius: 4px; font-size: 15px; font-weight: bold; cursor: pointer; }
         button:hover { background: #218838; }
         .btn-voltar { background: #6c757d; color: white; text-decoration: none; padding: 12px; border-radius: 4px; font-weight: bold; font-size: 15px; display: inline-block; text-align: center; margin-right: 10px; }
@@ -21,12 +21,13 @@
     <div class="box">
         <h2>👤 Cadastrar Novo Usuário</h2>
         
-        {{if .erro}}
-        <div class="alert-error">{{.erro}}</div>
+        <!-- Renderização correta dos alertas mapeados -->
+        {{if .Erro}}
+        <div class="alert-error">{{.Erro}}</div>
         {{end}}
         
-        {{if .sucesso}}
-        <div class="alert-success">{{.sucesso}}</div>
+        {{if .Sucesso}}
+        <div class="alert-success">{{.Sucesso}}</div>
         {{end}}
 
         <form action="/usuario/novo" method="POST">
@@ -38,11 +39,50 @@
                 <label>Senha Provisória</label>
                 <input type="password" name="senha" placeholder="No mínimo 4 caracteres" required>
             </div>
+
+            <!-- Movido para dentro do Form -->
+            <div class="form-group">
+                <label for="perfil">Perfil do Usuário</label>
+                <select id="perfil" name="perfil" onchange="alternarProjetos()" required>
+                    <option value="consultor" selected>Consultor (Acesso Limitado)</option>
+                    <option value="admin">Administrador (Acesso Total)</option>
+                </select>
+            </div>
+
+            <!-- Laço alterado para ler explicitamente .Projetos -->
+            <div class="form-group" id="bloco-projetos-vinculo">
+                <label>Selecione os Projetos que este Consultor poderá visualizar:</label>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #ccc; max-height: 200px; overflow-y: auto;">
+                    {{ range .Projetos }}
+                    <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" name="projetos_vinculados[]" value="{{ .ID }}" id="proj_{{ .ID }}">
+                        <label for="proj_{{ .ID }}" style="font-weight: normal; margin: 0; cursor: pointer;"><strong>#{{ .ID }}</strong> - {{ .Nome }}</label>
+                    </div>
+                    {{ else }}
+                    <p style="color: #6c757d; font-style: italic; margin: 0;">Nenhum projeto cadastrado no sistema para vinculação.</p>
+                    {{ end }}
+                </div>
+            </div>
+
             <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
                 <a href="/" class="btn-voltar">Voltar ao Painel</a>
                 <button type="submit">Salvar Usuário</button>
             </div>
         </form>
     </div>
+
+    <script>
+    function alternarProjetos() {
+        const perfil = document.getElementById("perfil").value;
+        const blocoProjetos = document.getElementById("bloco-projetos-vinculo");
+        
+        if (perfil === "admin") {
+            blocoProjetos.style.display = "none";
+            document.querySelectorAll('input[name="projetos_vinculados[]"]').forEach(cb => cb.checked = false);
+        } else {
+            blocoProjetos.style.display = "flex";
+        }
+    }
+    </script>
 </body>
 </html>

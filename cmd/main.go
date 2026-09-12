@@ -19,10 +19,10 @@ func main() {
 	// 1. CARREGA AS VARIÁVEIS DE AMBIENTE DO .ENV PRIMEIRO
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("Aviso: Erro ao carregar o arquivo .env, usando padrões.")
+		log.Println("Aviso: Erro ao carregar o arquivo .env, usando padrões locais.")
 	}
 
-	// 2. INICIALIZA O BANCO DE DADOS POSTGRES ANTES DAS ROTAS
+	// 2. INICIALIZA O BANCO DE DADOS POSTGRES (Criando as tabelas e colunas novas automaticamente)
 	database.ConectarDB()
 
 	// 3. CONFIGURAÇÃO INICIAL DO GIN ENGINE
@@ -31,38 +31,30 @@ func main() {
 	// Carrega os arquivos HTML da sua pasta web
 	r.LoadHTMLGlob("web/*")
 
-	// Configura o diretório de uploads de fotos de forma correta
+	// Configura o diretório público de uploads de fotos de forma correta
 	r.Static("/uploads", "./uploads")
 
-	// 4. ROTAS PÚBLICAS (Acessíveis sem login)
+	// -------------------------------------------------------------------------
+	// 4. ROTAS PÚBLICAS (Acessíveis sem qualquer tipo de login)
+	// -------------------------------------------------------------------------
 	r.GET("/login", handler.ExibirLogin)
 	r.POST("/login", handler.ProcessarLogin)
+	r.GET("/logout", handler.LogOut) // Limpa o cookie de sessão do navegador
 
-	// 5. ROTAS PROTEGIDAS (Apenas usuários autenticados via middleware)
-	protegido := r.Group("/")
-	protegido.Use(middleware.AutenticacaoObrigatoria())
+	// -------------------------------------------------------------------------
+	// 5. ROTAS PROTEGIDAS - COMUM (Acessíveis por Administradores e Consultores)
+	// -------------------------------------------------------------------------
+	comum := r.Group("/")
+	comum.Use(middleware.AutenticacaoObrigatoria())
 	{
-		protegido.GET("/", handler.ListarProjetos)
-		protegido.GET("/novo", handler.ExibirFormulario)
-		protegido.POST("/gerar", handler.ProcessarFormulario)
-		protegido.GET("/editar", handler.EditarProjeto)
-		protegido.POST("/editar", handler.ProcessarEdicao)
+		// Lista os projetos na Home (Filtrado automaticamente se o usuário for consultor)
+		comum.GET("/", handler.ListarProjetos)
 
-		// Rota assíncrona para registrar o diário de bordo
+		// Visualização e download do Relatório Executivo consolidado
+		comum.GET("/download/html", handler.BaixarHTML)
 
-		protegido.GET("/logout", handler.LogOut)
-		protegido.POST("/projetos/diario", handler.RegistrarDiario)
-
-		// Downloads e exportações de relatórios
-		protegido.GET("/download/excel", handler.BaixarExcel)
-		protegido.GET("/download/html", handler.BaixarHTML)
-
-		// Cadastro de novos logins do sistema
-		r.GET("/usuario/novo", handler.ExibirCadastroUsuarios)
-		r.POST("/usuario/novo", handler.ProcessarCadastroUsuario)
-
-		// Página de sucesso após operações de POST
-		protegido.GET("/sucesso", func(c *gin.Context) {
+		// Página de sucesso após operações de POST bem-sucedidas
+		comum.GET("/sucesso", func(c *gin.Context) {
 			idStr := c.Query("id")
 			id, _ := strconv.Atoi(idStr)
 			proj, _ := services.BuscarProjetoPorID(id)
@@ -70,12 +62,39 @@ func main() {
 		})
 	}
 
-	// 6. ADQUIRE A PORTA E INICIA O SERVIDOR (O bloqueio final do código)
+	// -------------------------------------------------------------------------
+	// 6. ROTAS EXCLUSIVAS - ADMINISTRADORES (Criação, Edição, Diário e Usuários)
+	// -------------------------------------------------------------------------
+	admin := r.Group("/")
+	admin.Use(middleware.AutenticacaoObrigatoria(), middleware.RequererAdmin())
+	{
+		// Fluxo de criação de novos Projetos
+		admin.GET("/novo", handler.ExibirFormulario)
+		admin.POST("/gerar", handler.ProcessarFormulario)
+
+		// Fluxo de edição e atualização de Projetos e Materiais
+		admin.GET("/editar", handler.EditarProjeto)
+		admin.POST("/editar", handler.ProcessarEdicao)
+
+		// Rota assíncrona (AJAX) para registrar um novo relatório no Diário de Bordo
+		// Nota: Caso o nome da sua função seja diferente no projeto, altere após o ponto.
+		admin.POST("/projetos/diario", handler.ProcessarCadastroUsuario)
+
+		// Cadastro de novos acessos no sistema com caixas de seleção de projetos
+		admin.GET("/usuario/novo", handler.ExibirCadastroUsuarios)
+		admin.POST("/usuario/novo", handler.ProcessarCadastroUsuario)
+	}
+
+	// -------------------------------------------------------------------------
+	// 7. ADQUIRE A PORTA E INICIA O SERVIDOR (Bloqueio final de execução)
+	// -------------------------------------------------------------------------
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	fmt.Println("Servidor rodando com sucesso na porta:", port)
-	r.Run(":" + port)
+	fmt.Println("🚀 EnProject rodando com sucesso na porta:", port)
+	if err := r.Run(":" + port); err != nil {
+		log.Fatalf("Erro crítico ao rodar o servidor Gin: %v", err)
+	}
 }

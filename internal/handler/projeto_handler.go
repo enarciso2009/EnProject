@@ -11,13 +11,30 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListarProjetos busca todos os registros do banco e renderiza a página inicial
+// ListarProjetos busca os registros autorizados do banco e renderiza a página inicial
 func ListarProjetos(c *gin.Context) {
-	projetos, err := services.ListarTodosProjetos()
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Erro ao buscar projetos: %v", err)
+	// 1. Recupera o e-mail do usuário logado através do cookie de sessão
+	cookieEmail, err := c.Cookie("sessao_token")
+	if err != nil || cookieEmail == "" {
+		c.Redirect(http.StatusSeeOther, "/login")
 		return
 	}
+
+	// 2. Busca o ID e o Perfil do usuário logado
+	user, err := services.BuscarUsuarioPorEmail(cookieEmail)
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/login")
+		return
+	}
+
+	// 3. Puxa os projetos passando as credenciais do usuário para o filtro SQL
+	projetos, err := services.ListarTodosProjetos(user.ID, user.Perfil)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Erro ao buscar projetos autorizados: %v", err)
+		return
+	}
+
+	// Envia a lista filtrada para o index.html
 	c.HTML(http.StatusOK, "index.html", projetos)
 }
 

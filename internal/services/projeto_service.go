@@ -6,6 +6,8 @@ import (
 
 	"EnProject/internal/database"
 	"EnProject/internal/models"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // CalcularStatusTarefa aplica as regras automáticas com base na data atual
@@ -200,18 +202,33 @@ func BuscarProjetoPorID(id int) (*models.Projeto, error) {
 	return &p, nil
 }
 
-// ListarTodosProjetos otimizado para evitar loops pesados (N+1)
-func ListarTodosProjetos() ([]models.Projeto, error) {
+// ListarTodosProjetos busca os projetos com base no nível de acesso do usuário logado
+func ListarTodosProjetos(usuarioID int, perfil string) ([]models.Projeto, error) {
 	ctx := context.Background()
+	var query string
+	var rows pgx.Rows // 🛠️ CORRIGIDO: De database.Rows para pgx.Rows
+	var err error
 
-	// Carrega os dados básicos necessários para renderizar o painel inicial (index.html)
-	queryAll := `SELECT id, nome, gerente, resumo, observacoes, COALESCE(introducao, ''), COALESCE(localizacao, ''), COALESCE(encerramento, '') FROM projetos ORDER BY id DESC`
-	rows, err := database.DB.Query(ctx, queryAll)
+	// 1. Define a Query SQL com base no perfil do usuário
+	if perfil == "admin" {
+		query = `SELECT id, nome, gerente, resumo, observacoes, COALESCE(introducao, ''), COALESCE(localizacao, ''), COALESCE(encerramento, '') 
+		         FROM projetos ORDER BY id DESC`
+		rows, err = database.DB.Query(ctx, query)
+	} else {
+		query = `SELECT p.id, p.nome, p.gerente, p.resumo, p.observacoes, COALESCE(p.introducao, ''), COALESCE(p.localizacao, ''), COALESCE(p.encerramento, '') 
+		         FROM projetos p
+		         INNER JOIN projeto_usuarios pu ON p.id = pu.projeto_id
+		         WHERE pu.usuario_id = $1
+		         ORDER BY p.id DESC`
+		rows, err = database.DB.Query(ctx, query, usuarioID)
+	}
+
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
+	// 2. Monta a lista de projetos filtrados
 	var lista []models.Projeto
 	for rows.Next() {
 		var p models.Projeto
@@ -229,8 +246,7 @@ func ListarTodosProjetos() ([]models.Projeto, error) {
 			return nil, err
 		}
 
-		// Para calcular o StatusGeral ("Em-Andamento", "Atrasado") na Home,
-		// buscamos apenas as tarefas associadas de forma leve, em vez de carregar o projeto inteiro com imagens pesadas.
+		// Carrega as tarefas de forma leve para calcular a tag de status na Home
 		queryTar := `SELECT id, data_inicio, data_fim, concluido FROM tarefas WHERE projeto_id = $1`
 		tRows, err := database.DB.Query(ctx, queryTar, p.ID)
 		if err == nil {
@@ -243,9 +259,7 @@ func ListarTodosProjetos() ([]models.Projeto, error) {
 			tRows.Close()
 		}
 
-		// Calcula dinamicamente se o projeto está atrasado ou finalizado para a cor da tag no HTML
 		CalcularStatusProjeto(&p)
-
 		lista = append(lista, p)
 	}
 	return lista, nil

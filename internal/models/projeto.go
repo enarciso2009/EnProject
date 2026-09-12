@@ -46,6 +46,7 @@ type Usuario struct {
 	Email       string
 	Senha       string
 	DataCriacao time.Time
+	Perfil      string
 }
 
 type Material struct {

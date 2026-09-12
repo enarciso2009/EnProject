@@ -3,6 +3,7 @@ package services
 import (
 	"EnProject/internal/database"
 	"EnProject/internal/models"
+
 	"context"
 	"errors"
 
@@ -43,5 +44,46 @@ func AutenticarUsuario(email, senhaPura string) (*models.Usuario, error) {
 		return nil, errors.New("senha incorreta")
 	}
 
+	return &u, nil
+}
+func CriarUsuarioCompleto(u *models.Usuario, projetoIDs []int) error {
+	ctx := context.Background()
+	tx, err := database.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// 1. Salva o usuário no banco (com a coluna perfil adicionada)
+	queryUser := `INSERT INTO usuarios (email, senha, perfil) VALUES ($1, $2, $3) RETURNING id`
+	err = tx.QueryRow(ctx, queryUser, u.Email, u.Senha, u.Perfil).Scan(&u.ID)
+	if err != nil {
+		return err
+	}
+
+	// 2. Se for consultor e houver projetos selecionados, cria o vínculo na tabela pivô
+	if u.Perfil == "consultor" && len(projetoIDs) > 0 {
+		queryVinculo := `INSERT INTO projeto_usuarios (projeto_id, usuario_id) VALUES ($1, $2)`
+		for _, projID := range projetoIDs {
+			_, err = tx.Exec(ctx, queryVinculo, projID, u.ID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+// Garanta que este bloco de código existe e ESTÁ SALVO na pasta internal/services
+func BuscarUsuarioPorEmail(email string) (*models.Usuario, error) {
+	ctx := context.Background()
+	var u models.Usuario
+
+	query := `SELECT id, email, perfil FROM usuarios WHERE email = $1`
+	err := database.DB.QueryRow(ctx, query, email).Scan(&u.ID, &u.Email, &u.Perfil)
+	if err != nil {
+		return nil, err
+	}
 	return &u, nil
 }
