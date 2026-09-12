@@ -1,0 +1,5 @@
+// Define as credenciais padrão do seu sistema
+		emailPadrao := "admin@enproject.com"
+		senhaPuraPadrao := "admin123" 
+
+		
