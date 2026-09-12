@@ -46,7 +46,6 @@ func ProcessarFormulario(c *gin.Context) {
 	proj.Gerente = getMultipartFieldValue("gerente")
 	proj.StatusGeral = getMultipartFieldValue("status_geral")
 	proj.Resumo = getMultipartFieldValue("resumo")
-	proj.Participantes = getMultipartFieldValue("participantes")
 	proj.Observacoes = getMultipartFieldValue("observacoes")
 	proj.Introducao = getMultipartFieldValue("introducao")
 	proj.Localizacao = getMultipartFieldValue("localizacao")
@@ -58,6 +57,7 @@ func ProcessarFormulario(c *gin.Context) {
 	finais := form.Value["tarefa_fim[]"]
 	concluidos := form.Value["tarefa_concluido[]"] // ALINHADO: Sem o "a"
 	progressoArr := form.Value["tarefa_progresso[]"]
+
 	matItens := form.Value["mat_item[]"]
 	matDescs := form.Value["mat_descricao[]"]
 	matQtds := form.Value["mat_quantidade[]"]
@@ -164,7 +164,6 @@ func ProcessarEdicao(c *gin.Context) {
 	proj.Gerente = getMultipartFieldValue("gerente")
 	proj.StatusGeral = getMultipartFieldValue("status_geral")
 	proj.Resumo = getMultipartFieldValue("resumo")
-	proj.Participantes = getMultipartFieldValue("participantes")
 	proj.Observacoes = getMultipartFieldValue("observacoes")
 	proj.Introducao = getMultipartFieldValue("introducao")
 	proj.Localizacao = getMultipartFieldValue("localizacao")

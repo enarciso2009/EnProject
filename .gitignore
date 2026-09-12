@@ -1,0 +1,13 @@
+# Arquivo de configuração local (contém senhas)
+.env
+
+# Binários compilados do Go
+EnProject
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Pasta de Uploads locais (para não subir suas fotos de teste)
+uploads/

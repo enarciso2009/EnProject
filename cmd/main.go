@@ -58,8 +58,8 @@ func main() {
 		protegido.GET("/download/html", handler.BaixarHTML)
 
 		// Cadastro de novos logins do sistema
-		protegido.GET("/usuario/novo", handler.ExibirCadastroUsuarios)
-		protegido.POST("/usuario/novo", handler.ProcessarCadastroUsuario)
+		r.GET("/usuario/novo", handler.ExibirCadastroUsuarios)
+		r.POST("/usuario/novo", handler.ProcessarCadastroUsuario)
 
 		// Página de sucesso após operações de POST
 		protegido.GET("/sucesso", func(c *gin.Context) {

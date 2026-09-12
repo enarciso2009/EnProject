@@ -1,0 +1,53 @@
+-- 1. Tabela de Usuários
+CREATE TABLE usuarios (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    senha VARCHAR(255) NOT NULL,
+    data_criacao TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Tabela de Projetos
+CREATE TABLE projetos (
+    id SERIAL PRIMARY KEY,
+    gerente VARCHAR(255),
+    status_geral VARCHAR(50),
+    resumo TEXT,
+    participantes TEXT,
+    total_horas INT DEFAULT 0,
+    imagens TEXT[], -- Array de strings para armazenar os caminhos/URLs
+    observacoes TEXT,
+    introducao TEXT,
+    localizacao TEXT,
+    encerramento TEXT
+);
+
+-- 3. Tabela de Tarefas (Relacionada a Projetos)
+CREATE TABLE tarefas (
+    id SERIAL PRIMARY KEY,
+    projeto_id INT REFERENCES projetos(id) ON DELETE CASCADE,
+    nome VARCHAR(255) NOT NULL,
+    responsavel VARCHAR(255),
+    data_inicio TIMESTAMP WITH TIME ZONE,
+    data_fim TIMESTAMP WITH TIME ZONE,
+    progresso INT DEFAULT 0,
+    concluido BOOLEAN DEFAULT FALSE,
+    status VARCHAR(50)
+);
+
+-- 4. Tabela de Relatórios Diários (Relacionada a Projetos)
+CREATE TABLE relatorios_diarios (
+    id SERIAL PRIMARY KEY,
+    projeto_id INT REFERENCES projetos(id) ON DELETE CASCADE,
+    data TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    descricao TEXT,
+    imagens TEXT[] -- Array de strings para armazenar caminhos/URLs das imagens
+);
+
+-- 5. Tabela de Materiais (Relacionada a Projetos)
+CREATE TABLE materiais (
+    id SERIAL PRIMARY KEY,
+    projeto_id INT REFERENCES projetos(id) ON DELETE CASCADE,
+    item INT,
+    descricao TEXT,
+    quantidade INT
+);

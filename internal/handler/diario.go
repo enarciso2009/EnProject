@@ -31,8 +31,10 @@ func RegistrarDiario(c *gin.Context) {
 	projetoID, _ := strconv.Atoi(idStr)
 	dataStr := getMultipartFieldValue("data")
 	descricao := getMultipartFieldValue("descricao")
+	participantes := getMultipartFieldValue("participantes")
+	pendencias := getMultipartFieldValue("pendencias")
 
-	if projetoID == 0 || dataStr == "" || descricao == "" {
+	if projetoID == 0 || dataStr == "" || descricao == "" || participantes == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Campos obrigatórios ausentes"})
 		return
 	}
@@ -47,6 +49,8 @@ func RegistrarDiario(c *gin.Context) {
 	diario.ProjetoID = projetoID
 	diario.Data = dataRelatorio
 	diario.Descricao = descricao
+	diario.Participantes = participantes
+	diario.Pendencias = pendencias
 
 	// Processa e armazena os arquivos físicos de imagens específicos deste diário
 	arquivos := form.File["imagens_diario[]"]

@@ -44,7 +44,7 @@ func CalcularStatusProjeto(p *models.Projeto) {
 	p.StatusGeral = piorStatus
 }
 
-// SalvarProjetoCompleto grava um novo projeto, suas tarefas e imagens no banco de dados
+// SalvarProjetoCompleto grava um novo projeto, suas tarefas e imagens usando o array nativo
 func SalvarProjetoCompleto(p *models.Projeto) error {
 	ctx := context.Background()
 	tx, err := database.DB.Begin(ctx)
@@ -53,9 +53,9 @@ func SalvarProjetoCompleto(p *models.Projeto) error {
 	}
 	defer tx.Rollback(ctx)
 
-	// 1. Salva o Projeto incluindo participantes (5 campos)
-	queryProj := `INSERT INTO projetos (nome, gerente, resumo, participantes, observacoes, introducao, localizacao, encerramento) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
-	err = tx.QueryRow(ctx, queryProj, p.Nome, p.Gerente, p.Resumo, p.Participantes, p.Observacoes, p.Introducao, p.Localizacao, p.Encerramento).Scan(&p.ID)
+	// 1. Salva o Projeto incluindo o array de imagens diretamente na tabela pai (8 campos)
+	queryProj := `INSERT INTO projetos (nome, gerente, resumo, observacoes, introducao, localizacao, encerramento, imagens) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
+	err = tx.QueryRow(ctx, queryProj, p.Nome, p.Gerente, p.Resumo, p.Observacoes, p.Introducao, p.Localizacao, p.Encerramento, p.Imagens).Scan(&p.ID)
 	if err != nil {
 		return err
 	}
@@ -69,17 +69,8 @@ func SalvarProjetoCompleto(p *models.Projeto) error {
 		}
 	}
 
-	// 3. Salva as Imagens vinculadas
-	queryImg := `INSERT INTO projeto_imagens (projeto_id, imagem_url) VALUES ($1, $2)`
-	for _, imgURL := range p.Imagens {
-		_, err = tx.Exec(ctx, queryImg, p.ID, imgURL)
-		if err != nil {
-			return err
-		}
-	}
-
-	// 4. Salva os Materiais vinculados
-	queryMat := `INSERT INTO projeto_materiais (projeto_id, item, descricao, quantidade) VALUES ($1, $2, $3, $4)`
+	// 3. Salva os Materiais vinculados
+	queryMat := `INSERT INTO materiais (projeto_id, item, descricao, quantidade) VALUES ($1, $2, $3, $4)`
 	for _, m := range p.Materiais {
 		_, err = tx.Exec(ctx, queryMat, p.ID, m.Item, m.Descricao, m.Quantidade)
 		if err != nil {
@@ -87,11 +78,9 @@ func SalvarProjetoCompleto(p *models.Projeto) error {
 		}
 	}
 	return tx.Commit(ctx)
-
 }
 
 // AtualizarProjetoCompleto modifica o cabeçalho e reestrutura as tarefas e imagens do projeto no Postgres
-// CORRIGIDO: Removido o erro de digitação "Altualizar" para "Atualizar" para sincronizar com seu handler
 func AtualizarProjetoCompleto(p *models.Projeto) error {
 	ctx := context.Background()
 	tx, err := database.DB.Begin(ctx)
@@ -100,9 +89,9 @@ func AtualizarProjetoCompleto(p *models.Projeto) error {
 	}
 	defer tx.Rollback(ctx)
 
-	// 1. Atualiza dados do cabeçalho incluindo participantes
-	queryProj := `UPDATE projetos SET nome = $1, gerente = $2, resumo = $3, participantes = $4, observacoes = $5, introducao = $6, localizacao = $7, encerramento = $8 WHERE id = $9`
-	_, err = tx.Exec(ctx, queryProj, p.Nome, p.Gerente, p.Resumo, p.Participantes, p.Observacoes, p.Introducao, p.Localizacao, p.Encerramento, p.ID)
+	// 1. Atualiza dados do cabeçalho incluindo o array de imagens diretamente
+	queryProj := `UPDATE projetos SET nome = $1, gerente = $2, resumo = $3, observacoes = $4, introducao = $5, localizacao = $6, encerramento = $7, imagens = $8 WHERE id = $9`
+	_, err = tx.Exec(ctx, queryProj, p.Nome, p.Gerente, p.Resumo, p.Observacoes, p.Introducao, p.Localizacao, p.Encerramento, p.Imagens, p.ID)
 	if err != nil {
 		return err
 	}
@@ -122,29 +111,14 @@ func AtualizarProjetoCompleto(p *models.Projeto) error {
 		}
 	}
 
-	// 4. Remove as imagens antigas para atualização limpa
-	_, err = tx.Exec(ctx, `DELETE FROM projeto_imagens WHERE projeto_id = $1`, p.ID)
+	// 4. Limpa os materiais antigos antes de reinserir (usando o nome correto da tabela: materiais)
+	_, err = tx.Exec(ctx, `DELETE FROM materiais WHERE projeto_id = $1`, p.ID)
 	if err != nil {
 		return err
 	}
 
-	// 5. Insere a nova lista de imagens atualizada
-	queryImg := `INSERT INTO projeto_imagens (projeto_id, imagem_url) VALUES ($1, $2)`
-	for _, imgURL := range p.Imagens {
-		_, err = tx.Exec(ctx, queryImg, p.ID, imgURL)
-		if err != nil {
-			return err
-		}
-	}
-
-	// 6. Limpa os materias antigos antes de reinserir
-	_, err = tx.Exec(ctx, `DELETE FROM projeto_materiais WHERE projeto_id = $1`, p.ID)
-	if err != nil {
-		return err
-	}
-
-	// 7. Insere a nova lista de materiais atualizada
-	queryMat := `INSERT INTO projeto_materiais (projeto_id, item, descricao, quantidade) VALUES ($1, $2, $3, $4)`
+	// 5. Insere a nova lista de materiais atualizada
+	queryMat := `INSERT INTO materiais (projeto_id, item, descricao, quantidade) VALUES ($1, $2, $3, $4)`
 	for _, m := range p.Materiais {
 		_, err = tx.Exec(ctx, queryMat, p.ID, m.Item, m.Descricao, m.Quantidade)
 		if err != nil {
@@ -159,20 +133,19 @@ func BuscarProjetoPorID(id int) (*models.Projeto, error) {
 	ctx := context.Background()
 	var p models.Projeto
 
-	// CORRIGIDO: Mapeamento de 6 campos de retorno para 6 alvos de Scan sem erros de contagem
-	queryProj := `SELECT id, nome, gerente, resumo, participantes, observacoes, COALESCE(introducao, ''), COALESCE(localizacao, ''), COALESCE(encerramento, '') FROM projetos WHERE id = $1`
+	// Buscando o array de imagens diretamente da tabela projetos
+	queryProj := `SELECT id, nome, gerente, resumo, observacoes, COALESCE(introducao, ''), COALESCE(localizacao, ''), COALESCE(encerramento, ''), imagens FROM projetos WHERE id = $1`
 
 	err := database.DB.QueryRow(ctx, queryProj, id).Scan(
-		&p.ID,            //1
-		&p.Nome,          //2
-		&p.Gerente,       //3
-		&p.Resumo,        //4
-		&p.Participantes, //6
-		&p.Observacoes,   //7
-		&p.Introducao,    //8
-		&p.Localizacao,   //9
-		&p.Encerramento,  //10
-
+		&p.ID,
+		&p.Nome,
+		&p.Gerente,
+		&p.Resumo,
+		&p.Observacoes,
+		&p.Introducao,
+		&p.Localizacao,
+		&p.Encerramento,
+		&p.Imagens, // O pgx faz o Scan automático de TEXT[] do Postgres para []string do Go 🐘
 	)
 	if err != nil {
 		return &p, err
@@ -188,44 +161,21 @@ func BuscarProjetoPorID(id int) (*models.Projeto, error) {
 
 	for rows.Next() {
 		var t models.Tarefa
-		err := database.DB.QueryRow(ctx, `SELECT id, nome, responsavel, data_inicio, data_fim, concluido, progresso FROM tarefas WHERE id = $1`, t.ID).Scan()
-		err = rows.Scan(
-			&t.ID,
-			&t.Nome,
-			&t.Responsavel,
-			&t.DataInicio,
-			&t.DataFim,
-			&t.Concluido,
-			&t.Progresso,
-		)
+		err = rows.Scan(&t.ID, &t.Nome, &t.Responsavel, &t.DataInicio, &t.DataFim, &t.Concluido, &t.Progresso)
 		if err != nil {
 			return &p, err
 		}
 		p.Tarefas = append(p.Tarefas, t)
-		// p.TotalHoras += t.Horas
 	}
 
-	// Busca Imagens Gerais do Projeto
-	queryImg := `SELECT imagem_url FROM projeto_imagens WHERE projeto_id = $1`
-	imgRows, err := database.DB.Query(ctx, queryImg, id)
-	if err == nil {
-		defer imgRows.Close()
-		for imgRows.Next() {
-			var imgURL string
-			if err := imgRows.Scan(&imgURL); err == nil {
-				p.Imagens = append(p.Imagens, imgURL)
-			}
-		}
-	}
-
-	// ADICIONADO: Busca dinâmica dos relatórios diários para o histórico da tela de edição
-	queryDiarios := `SELECT id, data, descricao, imagens FROM relatorios_diarios WHERE projeto_id = $1 ORDER BY data ASC`
+	// Busca dinâmica dos relatórios diários para o histórico da tela de edição (Incluindo pendencias e participantes)
+	queryDiarios := `SELECT id, data, descricao, imagens, COALESCE(participantes, ''), COALESCE(pendencias, '') FROM relatorios_diarios WHERE projeto_id = $1 ORDER BY data ASC`
 	diarioRows, err := database.DB.Query(ctx, queryDiarios, id)
 	if err == nil {
 		defer diarioRows.Close()
 		for diarioRows.Next() {
 			var r models.RelatorioDiario
-			err := diarioRows.Scan(&r.ID, &r.Data, &r.Descricao, &r.Imagens)
+			err := diarioRows.Scan(&r.ID, &r.Data, &r.Descricao, &r.Imagens, &r.Participantes, &r.Pendencias)
 			if err == nil {
 				r.ProjetoID = id
 				p.Relatorios = append(p.Relatorios, r)
@@ -233,7 +183,8 @@ func BuscarProjetoPorID(id int) (*models.Projeto, error) {
 		}
 	}
 
-	queryMat := `SELECT item, descricao, quantidade FROM projeto_materiais WHERE projeto_id = $1 ORDER BY item ASC`
+	// Busca Materiais usando a tabela correta 'materiais'
+	queryMat := `SELECT item, descricao, quantidade FROM materiais WHERE projeto_id = $1 ORDER BY item ASC`
 	matRows, err := database.DB.Query(ctx, queryMat, id)
 	if err == nil {
 		defer matRows.Close()
@@ -246,15 +197,15 @@ func BuscarProjetoPorID(id int) (*models.Projeto, error) {
 	}
 
 	CalcularStatusProjeto(&p)
-
 	return &p, nil
 }
 
-// ListarTodosProjetos busca todos os projetos na base para exibir na tela inicial
+// ListarTodosProjetos otimizado para evitar loops pesados (N+1)
 func ListarTodosProjetos() ([]models.Projeto, error) {
 	ctx := context.Background()
 
-	queryAll := `SELECT id, nome, gerente, resumo, participantes, observacoes, COALESCE(introducao, ''), COALESCE(localizacao, ''), COALESCE(encerramento, '') FROM projetos ORDER BY id DESC`
+	// Carrega os dados básicos necessários para renderizar o painel inicial (index.html)
+	queryAll := `SELECT id, nome, gerente, resumo, observacoes, COALESCE(introducao, ''), COALESCE(localizacao, ''), COALESCE(encerramento, '') FROM projetos ORDER BY id DESC`
 	rows, err := database.DB.Query(ctx, queryAll)
 	if err != nil {
 		return nil, err
@@ -269,7 +220,6 @@ func ListarTodosProjetos() ([]models.Projeto, error) {
 			&p.Nome,
 			&p.Gerente,
 			&p.Resumo,
-			&p.Participantes,
 			&p.Observacoes,
 			&p.Introducao,
 			&p.Localizacao,
@@ -279,9 +229,24 @@ func ListarTodosProjetos() ([]models.Projeto, error) {
 			return nil, err
 		}
 
-		// Carrega as tarefas, imagens e diários individuais para calcular o status correto no dashboard
-		projCompleto, _ := BuscarProjetoPorID(p.ID)
-		lista = append(lista, *projCompleto)
+		// Para calcular o StatusGeral ("Em-Andamento", "Atrasado") na Home,
+		// buscamos apenas as tarefas associadas de forma leve, em vez de carregar o projeto inteiro com imagens pesadas.
+		queryTar := `SELECT id, data_inicio, data_fim, concluido FROM tarefas WHERE projeto_id = $1`
+		tRows, err := database.DB.Query(ctx, queryTar, p.ID)
+		if err == nil {
+			for tRows.Next() {
+				var t models.Tarefa
+				if err := tRows.Scan(&t.ID, &t.DataInicio, &t.DataFim, &t.Concluido); err == nil {
+					p.Tarefas = append(p.Tarefas, t)
+				}
+			}
+			tRows.Close()
+		}
+
+		// Calcula dinamicamente se o projeto está atrasado ou finalizado para a cor da tag no HTML
+		CalcularStatusProjeto(&p)
+
+		lista = append(lista, p)
 	}
 	return lista, nil
 }
