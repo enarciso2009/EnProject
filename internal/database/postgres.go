@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var DB *pgxpool.Pool
@@ -116,4 +117,31 @@ func CriarTabelas() {
 	}
 
 	fmt.Println("📋 Estrutura de tabelas verificada/criada com sucesso!")
+
+	// 3. 🔑 VERIFICAÇÃO E INSERÇÃO DO ADMINISTRADOR PADRÃO (SEED)
+	var totalUsuarios int
+	err := DB.QueryRow(ctx, "SELECT COUNT(*) FROM usuarios").Scan(&totalUsuarios)
+	if err == nil && totalUsuarios == 0 {
+		fmt.Println("👤 Banco de dados novo detectado. Criando usuário administrador padrão...")
+
+		// Define as credenciais padrão do seu sistema
+		emailPadrao := "admin@enproject.com"
+		senhaPuraPadrao := "admin123" // Mude esta senha quando colocar o sistema em produção
+
+		// Criptografa a senha padrão de forma segura usando bcrypt
+		senhaHash, err := bcrypt.GenerateFromPassword([]byte(senhaPuraPadrao), bcrypt.DefaultCost)
+		if err != nil {
+			fmt.Printf("❌ Erro ao gerar segurança para senha padrão: %v\n", err)
+			return
+		}
+
+		// Insere o primeiro registro com o perfil explicitamente definido como 'admin'
+		querySeed := `INSERT INTO usuarios (email, senha, perfil) VALUES ($1, $2, $3)`
+		_, err = DB.Exec(ctx, querySeed, emailPadrao, string(senhaHash), "admin")
+		if err != nil {
+			fmt.Printf("❌ Erro ao inserir o usuário administrador padrão: %v\n", err)
+		} else {
+			fmt.Printf("✅ Administrador padrão criado com sucesso!\n   📧 E-mail: %s\n   🔑 Senha: %s\n", emailPadrao, senhaPuraPadrao)
+		}
+	}
 }
