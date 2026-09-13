@@ -20,8 +20,9 @@ func CalcularStatusTarefa(t *models.Tarefa) {
 		t.Status = "Finalizado"
 		return
 	}
+
 	if hoje.Before(inicio) {
-		t.Status = "Finalizado"
+		t.Status = "Não-Iniciado"
 		return
 	}
 	if (hoje.After(inicio) || hoje.Equal(inicio)) && (hoje.Before(fim) || hoje.Equal(fim)) {
@@ -34,13 +35,22 @@ func CalcularStatusTarefa(t *models.Tarefa) {
 // CalcularStatusProjeto define o status do projeto baseado na pior tarefa
 func CalcularStatusProjeto(p *models.Projeto) {
 	piorStatus := "Finalizado"
+
 	for i := range p.Tarefas {
 		CalcularStatusTarefa(&p.Tarefas[i])
+		statusTarefa := p.Tarefas[i].Status
 
-		if p.Tarefas[i].Status == "Atrasado" {
+		if statusTarefa == "Atrasado" {
 			piorStatus = "Atrasado"
-		} else if p.Tarefas[i].Status == "Em-Andamento" && piorStatus != "Em-Andamento" {
-			piorStatus = "Em-Andamento"
+			break
+		} else if statusTarefa == "Em-Andamento" {
+			if piorStatus != "Atrasado" {
+				piorStatus = "Em-Andamento"
+			}
+		} else if statusTarefa == "Não-Iniciado" {
+			if piorStatus == "Finalizado" {
+				piorStatus = "Não-Iniciado"
+			}
 		}
 	}
 	p.StatusGeral = piorStatus

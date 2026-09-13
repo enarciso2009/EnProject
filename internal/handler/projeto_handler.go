@@ -59,6 +59,12 @@ func ProcessarFormulario(c *gin.Context) {
 		return ""
 	}
 
+	// Carregar o fuso horário local do Brasil
+	fusoLocal, err := time.LoadLocation("America/Sao_Paulo")
+	if err != nil {
+		fusoLocal = time.Local
+	}
+
 	proj.Nome = getMultipartFieldValue("nome_projeto")
 	proj.Gerente = getMultipartFieldValue("gerente")
 	proj.StatusGeral = getMultipartFieldValue("status_geral")
@@ -107,8 +113,8 @@ func ProcessarFormulario(c *gin.Context) {
 			progressoInt, _ = strconv.Atoi(progressoArr[i])
 		}
 
-		dataIni, _ := time.Parse("2006-01-02", inicios[i])
-		dataFim, _ := time.Parse("2006-01-02", finais[i])
+		dataIni, _ := time.ParseInLocation("2006-01-02", inicios[i], fusoLocal)
+		dataFim, _ := time.ParseInLocation("2006-01-02", finais[i], fusoLocal)
 
 		proj.Tarefas = append(proj.Tarefas, models.Tarefa{
 			Nome:        nomes[i],
@@ -174,6 +180,12 @@ func ProcessarEdicao(c *gin.Context) {
 
 	idStr := getMultipartFieldValue("id")
 	id, _ := strconv.Atoi(idStr)
+
+	// Carrega o fuso horário local do Brasil
+	fusoLocal, err := time.LoadLocation("America/Sao_Paulo")
+	if err != nil {
+		fusoLocal = time.Local
+	}
 
 	var proj models.Projeto
 	proj.ID = id
@@ -242,8 +254,8 @@ func ProcessarEdicao(c *gin.Context) {
 			progressoInt, _ = strconv.Atoi(progressoArr[i])
 		}
 
-		dataIni, _ := time.Parse("2006-01-02", inicios[i])
-		dataFim, _ := time.Parse("2006-01-02", finais[i])
+		dataIni, _ := time.ParseInLocation("2006-01-02", inicios[i], fusoLocal)
+		dataFim, _ := time.ParseInLocation("2006-01-02", finais[i], fusoLocal)
 
 		proj.Tarefas = append(proj.Tarefas, models.Tarefa{
 			Nome:        nomes[i],
