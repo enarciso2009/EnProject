@@ -189,7 +189,16 @@
                         </summary>
                         
                         <div class="conteudo-expandido">
+                            <label><strong>Atividades:</strong></label>
                             <div class="historico-texto">{{ .Descricao }}</div>
+                            <br></br>
+                            <label><strong>Pendências:</strong></label>
+                            <div class="historico-texto">{{ .Pendencias }}</div>
+                            <br></br>
+                            <label><strong>Participantes:</strong></label>
+                            <div class="historico-texto">{{ .Participantes }}</div>
+                            
+                            
                             
                             {{ if .Imagens }}
                             <div class="historico-galeria">
@@ -363,6 +372,7 @@
             formData.append("data", dataInput.value);
             formData.append("descricao", descricaoInput.value);
             formData.append("participantes", participantesInput.value);
+            formData.append("pendencias", pendenciasInput.value);
 
             if (imagensInput.files) {
                 Array.from(imagensInput.files).forEach(file => {
@@ -405,11 +415,13 @@
                 novoItem.style.borderLeftColor = "#17a2b8";
                 novoItem.innerHTML = `
                     <summary class="historico-header">
-                        <span class="historico-data">📅 ${dataFormatada}</span>
+                        <span class="historico-data">${dataFormatada}</span>
                         <span class="seta-indicadora">Clique para fechar </span>
                     </summary>
                     <div class="conteudo-expandido">
                         <div class="historico-texto">${descricaoInput.value}</div>
+                        <div class="historico-texto">${pendenciasInput.value}</div>
+                        <div class="historico-texto">${participantesInput.value}</div>
                         ${galeriaHtml}
                     </div>
                 `;

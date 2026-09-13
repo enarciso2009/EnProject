@@ -78,7 +78,7 @@ func main() {
 
 		// Rota assíncrona (AJAX) para registrar um novo relatório no Diário de Bordo
 		// Nota: Caso o nome da sua função seja diferente no projeto, altere após o ponto.
-		admin.POST("/projetos/diario", handler.ProcessarCadastroUsuario)
+		admin.POST("/projetos/diario", handler.RegistrarDiario)
 
 		// Cadastro de novos acessos no sistema com caixas de seleção de projetos
 		admin.GET("/usuario/novo", handler.ExibirCadastroUsuarios)

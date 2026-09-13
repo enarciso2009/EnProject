@@ -11,7 +11,7 @@ func SalvarRelatorioDiario(diario *models.RelatorioDiario) error {
 	ctx := context.Background()
 
 	query := `
-		INSERT INTO relatorios_diarios (projeto_id, data, descricao, imagens,participantes, pendencias) 
+		INSERT INTO relatorios_diarios (projeto_id, data, descricao, imagens, participantes, pendencias) 
 		VALUES ($1, $2, $3, $4, $5, $6) 
 		RETURNING id
 	`

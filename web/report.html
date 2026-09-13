@@ -32,7 +32,7 @@
         /* Estilos da Galeria de Fotos */
         .galeria-section { margin-top: 35px; }
         .galeria-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; }
-        .galeria-item { width: 180px; height: 130px; border-radius: 6px; border: 1px solid #dee2e6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; background: #f8f9fa; }
+        .galeria-item { width: 220px; height: 190px; border-radius: 6px; border: 1px solid #dee2e6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; background: #f8f9fa; }
         .galeria-item img { width: 100%; height: 100%; object-fit: cover; }
         .sem-fotos { color: #6c757d; font-style: italic; font-size: 14px; margin-top: 10px; }
 
@@ -187,7 +187,7 @@
         </div>
         {{end}}
         
-        <h3 style="margin-top: 35px; color: #212529; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">Detalhamento Técnico das Tarefas</h3>
+        <h3 class="bloco-impressao" style="margin-top: 35px; color: #212529; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">Detalhamento Técnico das Tarefas</h3>
         <table>
             <thead>
                 <tr>
@@ -216,7 +216,7 @@
             </tbody>
         </table>
 
-        <h3 style="margin-top: 35px; color: #212529; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">📦 Lista de Materiais Aplicados</h3>
+        <h3 class="bloco-impressao" style="margin-top: 35px; color: #212529; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">Lista de Materiais Aplicados</h3>
         <table>
             <thead>
                 <tr>
@@ -240,11 +240,11 @@
             </tbody>
         </table>
         <!-- Histórico das Atividades Diários -->
-        <div class="galeria-section">
-            <h3 style="color: #212529; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">📖 Histórico Atividades Diárias </h3>
+        <div class="galeria-section bloco-impressao">
+            <h3 style="color: #212529; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">Histórico Atividades Diárias </h3>
             {{range .Relatorios}}
             <div class="diario-item-report">
-                <div class="diario-meta-report">📅 Relatório do Dia: {{.Data.Format "02/01/2006"}}</div>
+                <div class="diario-meta-report">Relatório do Dia: {{.Data.Format "02/01/2006"}}</div>
                 <b></b>
                 <div class="diario-conteudo-grid">
                     <!-- Bloco de Atividades -->
@@ -282,8 +282,8 @@
         </div>
 
         <!-- Galeria de Evidências/Fotos Gerais do Projeto -->
-        <div class="galeria-section">
-            <h3 style="color: #212529; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">📸 Evidências Visuais Gerais do Projeto</h3>
+        <div class="galeria-section bloco-impressao">
+            <h3 style="color: #212529; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">Evidências Visuais Gerais do Projeto</h3>
             <h4 style="margin: 15px 0 5px 0; color: #495057; font-size: 16px;">Galeria de Fotos Anexadas</h4>
             <p style="margin: 0 0 15px 0; color: #6c757d; font-size: 14px;">Imagens vinculadas à pasta geral de arquivos:</p>
                         
