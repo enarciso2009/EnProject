@@ -95,7 +95,7 @@
             transform: scale(1.02);
         }
 
-        /* 🚨 O PULO DO GATO: Esconde o botão completamente na hora de imprimir/gerar PDF */
+        /* Esconde o botão completamente na hora de imprimir/gerar PDF */
         @media print {
             .btn-imprimir-report {
                 display: none !important;
@@ -157,6 +157,7 @@
                 <li><strong>Introdução</strong></li>
                 <li><strong>Localização / Endereço</strong></li>
                 <li><strong>Detalhamento Técnico / Tarefas</strong></li>
+                <li><strong>Lista de Materiais Aplicados</strong></li>
                 <li><strong>Histórico Atividades Diárias</strong></li>
                 <li><strong>Evidências Visuais Gerais do Projeto</strong></li>
                 <li><strong>Encerramento / Considerações Finais</strong></li>
@@ -256,7 +257,7 @@
                     <b></b>
                     <!-- Bloco de Pendências -->
                     <div class="diario-card card-pendencias">
-                        <div class="diario-card-label"><strong>Pendências</strong></div>
+                        <div class="diario-card-label"><strong>Pendências:</strong></div>
                         <div class="diario-texto-report">{{if .Pendencias}}{{.Pendencias}}{{else}}Sem pendências para este dia.{{end}}</div>
                     </div>
                     <b></b>

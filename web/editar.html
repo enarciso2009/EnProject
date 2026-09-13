@@ -160,7 +160,7 @@
                     <textarea id="diario_descricao" name="diario_descricao" rows="5" placeholder="Digite aqui o andamento do dia..."></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Pendencias das Atividades</label>
+                    <label>Pendências das Atividades</label>
                     <textarea id="diario_pendencias" name="diario_pendencias" rows="5" placeholder="Digite aqui o pendencias do dia..."></textarea>
                 </div>
                 <div class="form-group">
@@ -216,37 +216,7 @@
                     <p id="msg-vazio" style="color: #6c757d; font-style: italic; margin-top: 10px;">Nenhum relatório diário foi cadastrado para este projeto até o momento.</p>
                 {{ end }}
             </div>
-
-            <!-- GALERIA GERAL DO PROJETO -->
-            <h3>Arquivos e Evidências Gerais do Projeto</h3>
-            {{ if and .Imagens (gt (len .Imagens) 0) (ne (index .Imagens 0) "") }}
-                <div class="galeria-atual">
-                    {{ range .Imagens }}
-                        {{ if ne . "" }} <!-- Garante que não vai renderizar strings vazias -->
-                        <div class="item-foto" style="text-align: center; border: 1px solid #ddd; padding: 10px; border-radius: 6px; background: #fff;">
-                            <script>
-                                var url = "{{ . }}";
-                                var extensao = url.split('.').pop().toLowerCase();
-                                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extensao)) {
-                                    document.write('<img src="{{ . }}" class="preview-img" alt="Foto do Projeto">');
-                                } else {
-                                    document.write('<div style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: #e9ecef; border-radius: 6px; font-weight: bold; color: #495057; font-size: 12px; border: 1px solid #ccc;">📄 .' + extensao.toUpperCase() + '</div>');
-                                }
-                            </script>
-
-                            <input type="hidden" name="fotos_existentes[]" value="{{ . }}">
-                            <br>
-                            <a href="{{ . }}" target="_blank" style="font-size: 12px; text-decoration: none; color: #007bff; display: block; margin: 5px 0;">Visualizar</a>
-                            <button type="button" class="btn-del" style="width: 100%; padding: 4px; font-size: 11px;" onclick="excluirFotoExistente(this)">Excluir</button>
-                        </div>
-                        {{ end }}
-                    {{ end }}
-                </div>
-            {{ else }}
-                <p style="color: #6c757d; font-style: italic; margin-top: 10px;">Nenhuma imagem ou arquivo foi vinculado a este projeto até o momento.</p>
-            {{ end }}
-
-            <!-- SEÇÃO DE LISTA DE MATERIAIS -->
+             <!-- SEÇÃO DE LISTA DE MATERIAIS -->
             <h3>Lista de Materiais</h3>
             <button type="button" class="btn-add" onclick="adicionarMaterial()">+ Adicionar Material</button>
 
@@ -297,6 +267,36 @@
                 }
             </script>
             
+            <!-- GALERIA GERAL DO PROJETO -->
+            <h3>Arquivos e Evidências Gerais do Projeto</h3>
+            {{ if and .Imagens (gt (len .Imagens) 0) (ne (index .Imagens 0) "") }}
+                <div class="galeria-atual">
+                    {{ range .Imagens }}
+                        {{ if ne . "" }} <!-- Garante que não vai renderizar strings vazias -->
+                        <div class="item-foto" style="text-align: center; border: 1px solid #ddd; padding: 10px; border-radius: 6px; background: #fff;">
+                            <script>
+                                var url = "{{ . }}";
+                                var extensao = url.split('.').pop().toLowerCase();
+                                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extensao)) {
+                                    document.write('<img src="{{ . }}" class="preview-img" alt="Foto do Projeto">');
+                                } else {
+                                    document.write('<div style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: #e9ecef; border-radius: 6px; font-weight: bold; color: #495057; font-size: 12px; border: 1px solid #ccc;">📄 .' + extensao.toUpperCase() + '</div>');
+                                }
+                            </script>
+
+                            <input type="hidden" name="fotos_existentes[]" value="{{ . }}">
+                            <br>
+                            <a href="{{ . }}" target="_blank" style="font-size: 12px; text-decoration: none; color: #007bff; display: block; margin: 5px 0;">Visualizar</a>
+                            <button type="button" class="btn-del" style="width: 100%; padding: 4px; font-size: 11px;" onclick="excluirFotoExistente(this)">Excluir</button>
+                        </div>
+                        {{ end }}
+                    {{ end }}
+                </div>
+            {{ else }}
+                <p style="color: #6c757d; font-style: italic; margin-top: 10px;">Nenhuma imagem ou arquivo foi vinculado a este projeto até o momento.</p>
+            {{ end }}
+
+           
             
             <div class="form-group">
                 <h3>Encerramento</h3>
