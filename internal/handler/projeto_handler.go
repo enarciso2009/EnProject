@@ -1,8 +1,13 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"EnProject/internal/models"
@@ -11,34 +16,38 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Função auxiliar para transformar o nome do projeto em um nome de pasta seguro
+func gerarNomePastaSeguro(nome string) string {
+	nome = strings.ToLower(nome)
+	nome = strings.ReplaceAll(nome, " ", "_")
+	// Remove qualquer caractere que não seja letra, número ou underline
+	reg := regexp.MustCompile(`[^a-z0-9_]`)
+	return reg.ReplaceAllString(nome, "")
+}
+
 // ListarProjetos busca os registros autorizados do banco e renderiza a página inicial
 func ListarProjetos(c *gin.Context) {
-	// 1. Recupera o e-mail do usuário logado através do cookie de sessão
 	cookieEmail, err := c.Cookie("sessao_token")
 	if err != nil || cookieEmail == "" {
 		c.Redirect(http.StatusSeeOther, "/login")
 		return
 	}
 
-	// 2. Busca o ID e o Perfil do usuário logado
 	user, err := services.BuscarUsuarioPorEmail(cookieEmail)
 	if err != nil {
 		c.Redirect(http.StatusSeeOther, "/login")
 		return
 	}
 
-	// 3. Puxa os projetos passando as credenciais do usuário para o filtro SQL
 	projetos, err := services.ListarTodosProjetos(user.ID, user.Perfil)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Erro ao buscar projetos autorizados: %v", err)
 		return
 	}
 
-	// Envia a lista filtrada para o index.html
 	c.HTML(http.StatusOK, "index.html", projetos)
 }
 
-// ExibirFormulario agora serve apenas para exibir a tela de cadastro vazia
 func ExibirFormulario(c *gin.Context) {
 	c.HTML(http.StatusOK, "form.html", nil)
 }
@@ -59,7 +68,6 @@ func ProcessarFormulario(c *gin.Context) {
 		return ""
 	}
 
-	// Carregar o fuso horário local do Brasil
 	fusoLocal, err := time.LoadLocation("America/Sao_Paulo")
 	if err != nil {
 		fusoLocal = time.Local
@@ -74,11 +82,42 @@ func ProcessarFormulario(c *gin.Context) {
 	proj.Localizacao = getMultipartFieldValue("localizacao")
 	proj.Encerramento = getMultipartFieldValue("encerramento")
 
+	// --- LOGICA DE CRIAR A PASTA DINÂMICA ---
+	nomePasta := gerarNomePastaSeguro(proj.Nome)
+	if nomePasta == "" {
+		nomePasta = "projeto_sem_nome"
+	}
+
+	// Define o caminho: uploads/nome_do_projeto
+	diretorioDestino := filepath.Join("uploads", nomePasta)
+
+	// Cria o diretório no sistema (0755 concede permissões de leitura/escrita padrão)
+	if err := os.MkdirAll(diretorioDestino, 0755); err != nil {
+		c.String(http.StatusInternalServerError, "Erro ao criar diretório do projeto: %v", err)
+		return
+	}
+
+	arquivos := form.File["imagens_projeto[]"]
+	for _, arquivo := range arquivos {
+		nomeArquivo := fmt.Sprintf("%d_%s", time.Now().UnixNano(), arquivo.Filename)
+
+		// Salva o arquivo fisicamente na nova pasta criada
+		caminhoSalvar := filepath.Join(diretorioDestino, nomeArquivo)
+
+		if err := c.SaveUploadedFile(arquivo, caminhoSalvar); err == nil {
+			// Salva a URL amigável no banco de dados (ex: /uploads/meu_projeto/123_foto.jpg)
+			urlBanco := fmt.Sprintf("/uploads/%s/%s", nomePasta, nomeArquivo)
+			proj.Imagens = append(proj.Imagens, urlBanco)
+		}
+	}
+	// ----------------------------------------
+
+	// (Restante do mapeamento de tarefas e materiais mantido)
 	nomes := form.Value["tarefa_nome[]"]
 	responsaveis := form.Value["tarefa_resp[]"]
 	inicios := form.Value["tarefa_inicio[]"]
 	finais := form.Value["tarefa_fim[]"]
-	concluidos := form.Value["tarefa_concluido[]"] // ALINHADO: Sem o "a"
+	concluidos := form.Value["tarefa_concluido[]"]
 	progressoArr := form.Value["tarefa_progresso[]"]
 
 	matItens := form.Value["mat_item[]"]
@@ -102,17 +141,14 @@ func ProcessarFormulario(c *gin.Context) {
 		if nomes[i] == "" {
 			continue
 		}
-
 		isConcluido := false
 		if i < len(concluidos) && concluidos[i] == "true" {
 			isConcluido = true
 		}
-
 		progressoInt := 0
 		if i < len(progressoArr) {
 			progressoInt, _ = strconv.Atoi(progressoArr[i])
 		}
-
 		dataIni, _ := time.ParseInLocation("2006-01-02", inicios[i], fusoLocal)
 		dataFim, _ := time.ParseInLocation("2006-01-02", finais[i], fusoLocal)
 
@@ -126,16 +162,6 @@ func ProcessarFormulario(c *gin.Context) {
 		})
 	}
 
-	arquivos := form.File["imagens_projeto[]"]
-	for _, arquivo := range arquivos {
-		nomeArquivo := strconv.FormatInt(time.Now().UnixNano(), 10) + "_" + arquivo.Filename
-		caminhoSalvar := "uploads/" + nomeArquivo
-
-		if err := c.SaveUploadedFile(arquivo, caminhoSalvar); err == nil {
-			proj.Imagens = append(proj.Imagens, "/uploads/"+nomeArquivo)
-		}
-	}
-
 	err = services.SalvarProjetoCompleto(&proj)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Erro ao salvar no banco: %v", err)
@@ -145,7 +171,6 @@ func ProcessarFormulario(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/sucesso?id="+strconv.Itoa(proj.ID))
 }
 
-// EditarProjeto busca os dados do projeto e abre o formulário pré-preenchido
 func EditarProjeto(c *gin.Context) {
 	idStr := c.Query("id")
 	id, err := strconv.Atoi(idStr)
@@ -163,7 +188,6 @@ func EditarProjeto(c *gin.Context) {
 	c.HTML(http.StatusOK, "editar.html", projeto)
 }
 
-// ProcessarEdicao captura o formulário alterado e atualiza o banco de dados
 func ProcessarEdicao(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
@@ -181,7 +205,6 @@ func ProcessarEdicao(c *gin.Context) {
 	idStr := getMultipartFieldValue("id")
 	id, _ := strconv.Atoi(idStr)
 
-	// Carrega o fuso horário local do Brasil
 	fusoLocal, err := time.LoadLocation("America/Sao_Paulo")
 	if err != nil {
 		fusoLocal = time.Local
@@ -205,23 +228,36 @@ func ProcessarEdicao(c *gin.Context) {
 		}
 	}
 
-	arquivos := form.File["imagens_projeto[]"]
-	for _, arquivo := range arquivos {
-		nomeArquivo := strconv.FormatInt(time.Now().UnixNano(), 10) + "_" + arquivo.Filename
-		caminhoSalvar := "uploads/" + nomeArquivo
+	// --- REPETE A LÓGICA DE DIRETÓRIO SEGURO NA EDIÇÃO ---
+	nomePasta := gerarNomePastaSeguro(proj.Nome)
+	if nomePasta == "" {
+		nomePasta = "projeto_sem_nome"
+	}
+	diretorioDestino := filepath.Join("uploads", nomePasta)
 
-		if err := c.SaveUploadedFile(arquivo, caminhoSalvar); err == nil {
-			proj.Imagens = append(proj.Imagens, "/uploads/"+nomeArquivo)
-		}
+	if err := os.MkdirAll(diretorioDestino, 0755); err != nil {
+		c.String(http.StatusInternalServerError, "Erro ao criar diretório do projeto: %v", err)
+		return
 	}
 
-	// 3. Captura os dados das tarefas, INCLUINDO o array de concluídos e de progresso
+	arquivos := form.File["imagens_projeto[]"]
+	for _, arquivo := range arquivos {
+		nomeArquivo := fmt.Sprintf("%d_%s", time.Now().UnixNano(), arquivo.Filename)
+		caminhoSalvar := filepath.Join(diretorioDestino, nomeArquivo)
+
+		if err := c.SaveUploadedFile(arquivo, caminhoSalvar); err == nil {
+			urlBanco := fmt.Sprintf("/uploads/%s/%s", nomePasta, nomeArquivo)
+			proj.Imagens = append(proj.Imagens, urlBanco)
+		}
+	}
+	// ----------------------------------------------------
+
 	nomes := form.Value["tarefa_nome[]"]
 	responsaveis := form.Value["tarefa_resp[]"]
 	inicios := form.Value["tarefa_inicio[]"]
 	finais := form.Value["tarefa_fim[]"]
-	concluidos := form.Value["tarefa_concluido[]"]   // CORRIGIDO: Nome igual ao do html ("tarefa_concluido[]")
-	progressoArr := form.Value["tarefa_progresso[]"] // ADICIONADO: Captura o progresso na edição
+	concluidos := form.Value["tarefa_concluido[]"]
+	progressoArr := form.Value["tarefa_progresso[]"]
 	matItens := form.Value["mat_item[]"]
 	matDescs := form.Value["mat_descricao[]"]
 	matQtds := form.Value["mat_quantidade[]"]
@@ -243,17 +279,14 @@ func ProcessarEdicao(c *gin.Context) {
 		if nomes[i] == "" {
 			continue
 		}
-
 		isConcluido := false
 		if i < len(concluidos) && concluidos[i] == "true" {
 			isConcluido = true
 		}
-
 		progressoInt := 0
 		if i < len(progressoArr) {
 			progressoInt, _ = strconv.Atoi(progressoArr[i])
 		}
-
 		dataIni, _ := time.ParseInLocation("2006-01-02", inicios[i], fusoLocal)
 		dataFim, _ := time.ParseInLocation("2006-01-02", finais[i], fusoLocal)
 
@@ -262,7 +295,7 @@ func ProcessarEdicao(c *gin.Context) {
 			Responsavel: responsaveis[i],
 			DataInicio:  dataIni,
 			DataFim:     dataFim,
-			Progresso:   progressoInt, // CORRIGIDO: Passa o progresso capturado para a struct
+			Progresso:   progressoInt,
 			Concluido:   isConcluido,
 		})
 	}

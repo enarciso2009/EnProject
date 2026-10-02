@@ -22,6 +22,7 @@ type RelatorioDiario struct {
 	Imagens       []string  `json:"imagens"`
 	Participantes string    `json:"participantes"`
 	Pendencias    string    `json:"pendencias"`
+	Veiculos      string    `json:"veiculos"`
 }
 
 type Projeto struct {

@@ -360,6 +360,10 @@
                     <textarea id="diario_participantes" name="diario_participantes" rows="2" placeholder="Digite aqui os participantes do dia..."></textarea>
                 </div>
                 <div class="form-group">
+                    <label>Veículos</label>
+                    <textarea id="diario_veiculos" name="diario_veiculos" rows="2" placeholder="Digite aqui os veículos do dia..."></textarea>
+                </div>
+                <div class="form-group">
                     <label>Fotos / Evidências deste Relatório Diário</label>
                     <label for="imagens_diario" class="btn-upload-custom">Selecionar Fotos do Dia</label>
                     <input type="file" id="imagens_diario" name="imagens_diario[]" class="input-file-oculto" accept="image/*" multiple onchange="visualizarImagens(this)">
@@ -560,6 +564,7 @@
             const imagensInput = document.getElementById("imagens_diario");
             const participantesInput = document.getElementById("diario_participantes");
             const pendenciasInput = document.getElementById("diario_pendencias");
+            const veiculosInput = document.getElementById("diario_veiculos");
             
             const projetoIdInput = document.querySelector('input[name="id"]');
             const projetoId = projetoIdInput ? projetoIdInput.value : "";
@@ -575,7 +580,7 @@
             formData.append("descricao", descricaoInput.value);
             formData.append("participantes", participantesInput.value);
             formData.append("pendencias", pendenciasInput.value);
-
+            formData.append("veiculos", veiculosInput.value);
             if (imagensInput.files) {
                 Array.from(imagensInput.files).forEach(file => {
                     formData.append("imagens_diario[]", file);
@@ -635,6 +640,7 @@
                 descricaoInput.value = "";
                 pendenciasInput.value = "";
                 participantesInput.value = "";
+                veiculosInput.value = "";   
                 imagensInput.value = "";
                 document.getElementById("preview-imagens-novas-diario").innerHTML = "";
 

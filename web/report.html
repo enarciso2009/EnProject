@@ -266,6 +266,11 @@
                         <div class="diario-card-label"><strong>Participantes:</strong></div>
                         <div class="diario-texto-report">{{if .Participantes}}{{.Participantes}}{{else}}Não informado.{{end}}</div>
                     </div>
+                     <!-- Bloco de Veiculos -->
+                    <div class="diario-card card-veiculos">
+                        <div class="diario-card-label"><strong>Veículos:</strong></div>
+                        <div class="diario-texto-report">{{if .Veiculos}}{{.Veiculos}}{{else}}Não informado.{{end}}</div>
+                    </div>
                 </div>
                 <b></b>
                 {{if .Imagens}}
@@ -283,23 +288,6 @@
             {{end}}
         </div>
 
-        <!-- Galeria de Evidências/Fotos Gerais do Projeto 
-        <div class="galeria-section bloco-impressao">
-            <h3 style="color: #212529; border-bottom: 2px solid #dee2e6; padding-bottom: 8px;">Evidências Visuais Gerais do Projeto</h3>
-            <h4 style="margin: 15px 0 5px 0; color: #495057; font-size: 16px;">Galeria de Fotos Anexadas</h4>
-            <p style="margin: 0 0 15px 0; color: #6c757d; font-size: 14px;">Imagens vinculadas à pasta geral de arquivos:</p>
-                        
-            <div class="galeria-grid">
-                {{range .Imagens}}
-                <div class="galeria-item">
-                    <img src="{{.}}" alt="Evidência do Projeto">
-                </div>
-                {{else}}
-                <p class="sem-fotos">Nenhuma evidência fotográfica geral foi anexada a este relatório.</p>
-                {{end}}
-            </div>
-        </div> -->
-                <!-- ADICIONADO: Caixa de Encerramento (Final do documento) -->
         {{if .Encerramento}}
         <div class="resumo-section bloco-impressao" style="margin-top: 30px; border-left: 5px solid #17a2b8; background: #f1f9fa; page-break-inside: avoid;">
             <strong>Encerramento / Considerações Finais:</strong>

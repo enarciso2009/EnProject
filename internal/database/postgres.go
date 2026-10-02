@@ -89,7 +89,8 @@ func CriarTabelas() {
 			descricao TEXT,
 			imagens TEXT[],
 			participantes TEXT,
-			pendencias TEXT
+			pendencias TEXT, 
+			veiculos TEXT
 		);`,
 
 		`CREATE TABLE IF NOT EXISTS materiais (
