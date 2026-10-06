@@ -274,3 +274,49 @@ func ListarTodosProjetos(usuarioID int, perfil string) ([]models.Projeto, error)
 	}
 	return lista, nil
 }
+
+// ExcluirProjetoCompleto remove o projeto e todos os seus vínculos (tarefas, materiais, relatórios) do banco de dados
+func ExcluirProjetoCompleto(id int) error {
+	ctx := context.Background()
+
+	// Inicia a transação com o Postgres usando o pgx v5
+	tx, err := database.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	// Garante que desfaz tudo se a função der erro no meio do caminho
+	defer tx.Rollback(ctx)
+
+	// 1. Remove os materiais vinculados ao projeto
+	_, err = tx.Exec(ctx, `DELETE FROM materiais WHERE projeto_id = $1`, id)
+	if err != nil {
+		return err
+	}
+
+	// 2. Remove as tarefas vinculadas ao projeto
+	_, err = tx.Exec(ctx, `DELETE FROM tarefas WHERE projeto_id = $1`, id)
+	if err != nil {
+		return err
+	}
+
+	// 3. Remove os relatórios diários vinculados ao projeto
+	_, err = tx.Exec(ctx, `DELETE FROM relatorios_diarios WHERE projeto_id = $1`, id)
+	if err != nil {
+		return err
+	}
+
+	// 4. Se houver tabela de vínculo de usuários (perfil admin/comum), limpa ela também
+	_, err = tx.Exec(ctx, `DELETE FROM projeto_usuarios WHERE projeto_id = $1`, id)
+	if err != nil {
+		return err
+	}
+
+	// 5. Por fim, remove o cabeçalho do projeto na tabela principal
+	_, err = tx.Exec(ctx, `DELETE FROM projetos WHERE id = $1`, id)
+	if err != nil {
+		return err
+	}
+
+	// Confirma todas as exclusões de uma vez só
+	return tx.Commit(ctx)
+}

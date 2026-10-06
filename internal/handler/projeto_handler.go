@@ -308,3 +308,40 @@ func ProcessarEdicao(c *gin.Context) {
 
 	c.Redirect(http.StatusSeeOther, "/sucesso?id="+strconv.Itoa(proj.ID))
 }
+
+// ExcluirProjeto processa a remoção do projeto do banco e deleta a pasta física
+func ExcluirProjeto(c *gin.Context) {
+	idStr := c.Query("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de projeto inválido"})
+		return
+	}
+
+	// 1. Busca o projeto antes de deletar para saber o nome correto da pasta física
+	projeto, err := services.BuscarProjetoPorID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Projeto não localizado no banco"})
+		return
+	}
+
+	// 2. Remove a pasta física do projeto com todas as imagens salvas
+	nomePasta := gerarNomePastaSeguro(projeto.Nome)
+	if nomePasta != "" && nomePasta != "projeto_sem_nome" {
+		diretorioDestino := filepath.Join("uploads", nomePasta)
+
+		// Remove a pasta e tudo o que estiver dentro dela
+		_ = os.RemoveAll(diretorioDestino)
+	}
+
+	// 3. Deleta o registro do banco de dados através da camada de serviço
+	// Certifique-se de que a função ExcluirProjetoCompleto existe no seu pacote services
+	err = services.ExcluirProjetoCompleto(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Erro ao deletar do banco: %v", err)})
+		return
+	}
+
+	// Retorna sucesso para o JavaScript recarregar a tela
+	c.Status(http.StatusOK)
+}

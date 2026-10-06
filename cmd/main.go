@@ -83,6 +83,8 @@ func main() {
 		// Cadastro de novos acessos no sistema com caixas de seleção de projetos
 		admin.GET("/usuario/novo", handler.ExibirCadastroUsuarios)
 		admin.POST("/usuario/novo", handler.ProcessarCadastroUsuario)
+
+		admin.DELETE("/projeto/excluir", handler.ExcluirProjeto)
 	}
 
 	// -------------------------------------------------------------------------

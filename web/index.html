@@ -30,6 +30,8 @@
         font-weight: bold; 
         margin-right: 4px; 
         color: white; 
+        border: none;
+        cursor: pointer;
     }
     .badge-acao:last-child {
         margin-right: 0;
@@ -38,6 +40,11 @@
     .ver-html:hover { background: #138496; }
     .bx-excel { background: #217346; }
     .bx-excel:hover { background: #1a5c38; }
+    
+    /* Estilo do botão de exclusão */
+    .btn-deletar { background: #dc3545; transition: all 0.2s; }
+    .btn-deletar:hover { background: #c82333; }
+    
     .status-Não-Iniciado { background: #d9ecf0; color: #03b8b8; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
     .status-Finalizado { background: #e2f0d9; color: #385723; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
     .status-Em-Andamento { background: #fff2cc; color: #7f6000; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
@@ -65,7 +72,6 @@
     .btn-projeto-novo {
         background-color: #007bff;
         color: white;
-         
     }
     .btn-projeto-novo:hover {
         background-color: #0056b3;
@@ -85,7 +91,6 @@
         background-color: #c82333;
     }
     </style>
-
 </head>
 <body>
     <!-- BARRA DE NAVEGAÇÃO SUPERIOR REORGANIZADA -->
@@ -99,11 +104,10 @@
     </div>
     <div class="container">
         <div class="top-bar">
-            <h2>Gestão e Acompanhamento de Projetos (EnProject)</h2>
-            
+            <h2>Gestão e Acompanhamento de Projetos</h2>
         </div>
 
-        <h3>📋 Portfólio de Projetos Gravados</h3>
+        <h3>Portfólio de Projetos Gravados</h3>
         <table>
             <thead>
                 <tr>
@@ -111,8 +115,7 @@
                     <th>Nome do Projeto</th>
                     <th>Gerente Responsável</th>
                     <th>Status Atual</th>
-                    <!--<th>Esforço Alocado</th> -->
-                    <th>Ações de Acompanhamento</th>
+                    <th class="coluna-acoes">Ações de Acompanhamento</th>
                 </tr>
             </thead>
             <tbody>
@@ -122,22 +125,88 @@
                     <td><strong>{{.Nome}}</strong></td>
                     <td>{{.Gerente}}</td>
                     <td><span class="status-{{.StatusGeral}}">{{.StatusGeral}}</span></td>
-                    <!--<td>{{.TotalHoras}}h</td> -->
-                    <td>
-                        <a href="/editar?id={{.ID}}" class="badge-acao" style="background: #007bff;">✏️ Editar</a>
-                        <a href="/download/html?id={{.ID}}" target="_blank" class="badge-acao ver-html">🌐 Visualizar Report</a>
-                       <!-- <a href="/download/excel?id={{.ID}}" class="badge-acao bx-excel">📊 Exportar Excel</a> -->
+                    <td class="coluna-acoes">
+                        <a href="/editar?id={{.ID}}" class="badge-acao" style="background: #007bff;">Editar</a>
+                        <a href="/download/html?id={{.ID}}" target="_blank" class="badge-acao ver-html">Visualizar Report</a>
+                        
+                        <!-- Novo Botão de Excluir controlado por Estado via JavaScript -->
+                        <button class="badge-acao btn-deletar" data-id="{{.ID}}" data-cliques="3" onclick="confirmarExclusao(this)">
+                            Excluir
+                        </button>
                     </td>
                 </tr>
                 {{else}}
                 <tr>
-                    <td colspan="6" style="text-align: center; color: #6c757d; padding: 30px;">
-                        Nenhum projeto cadastrado no banco de dados até o momento. Clique em "+ Cadastrar Novo Projeto" para começar!
+                    <td colspan="5" style="text-align: center; color: #6c757d; padding: 30px;">
+                        Nenhum projeto cadastrado no banco de dados até o momento. Clique em "Novo Projeto" para começar!
                     </td>
                 </tr>
                 {{end}}
             </tbody>
         </table>
     </div>
+
+    <script>
+        function confirmarExclusao(botao) {
+            const projetoId = botao.getAttribute('data-id');
+            let cliquesRestantes = parseInt(botao.getAttribute('data-cliques'));
+    
+        cliquesRestantes--;
+    
+        // Configura mensagens personalizadas para cada um dos primeiros cliques
+        if (cliquesRestantes === 2) {
+            if (!confirm("⚠️ Atenção: Você tem certeza de que deseja excluir este projeto? (Confirmação 1 de 3)")) {
+                resetarBotao(botao);
+                return; // Cancela se o usuário clicar em "Cancelar"
+            }
+            botao.setAttribute('data-cliques', cliquesRestantes);
+            botao.innerText = "Confirmar (2/3)";
+            botao.style.backgroundColor = "#ffc107";
+            botao.style.color = "#000";
+        } 
+        else if (cliquesRestantes === 1) {
+            if (!confirm("🚨 Cuidado: Todos os dados, tarefas e imagens serão apagados permanentemente! Tem certeza absoluta? (Confirmação 2 de 3)")) {
+                resetarBotao(botao);
+                return;
+            }
+            botao.setAttribute('data-cliques', cliquesRestantes);
+            botao.innerText = "Último clique (3/3)";
+            botao.style.backgroundColor = "#fd7e14"; // Laranja de perigo iminente
+            botao.style.color = "#fff";
+        } 
+        else {
+            // Terceiro e último clique: executa a ação no servidor
+            botao.innerText = "Excluindo...";
+            botao.disabled = true;
+        
+            fetch(`/projeto/excluir?id=${projetoId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("🚀 Projeto excluído com sucesso!");
+                    window.location.reload();
+                } else {
+                    alert("❌ Erro ao excluir o projeto no servidor.");
+                    resetarBotao(botao);
+                }
+            })
+            .catch(error => {
+                console.error("Erro:", error);
+                alert("🌐 Erro de conexão ao tentar excluir.");
+                resetarBotao(botao);
+            });
+        }
+    }
+
+    function resetarBotao(botao) {
+        botao.setAttribute('data-cliques', '3');
+        botao.innerText = "Excluir";
+        botao.style.backgroundColor = "#dc3545";
+        botao.style.color = "#ffffff";
+        botao.disabled = false;
+    }
+    </script>
+
 </body>
 </html>
