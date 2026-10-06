@@ -85,6 +85,8 @@ func main() {
 		admin.POST("/usuario/novo", handler.ProcessarCadastroUsuario)
 
 		admin.DELETE("/projeto/excluir", handler.ExcluirProjeto)
+		admin.DELETE("/projetos/diario/excluir", handler.ExcluirRelatorio)
+
 	}
 
 	// -------------------------------------------------------------------------

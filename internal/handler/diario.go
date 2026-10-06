@@ -25,7 +25,6 @@ func gerarNomePastaDiarioSeguro(nome string) string {
 }
 
 // RegistrarDiario captura o envio assíncrono do diário de bordo via AJAX/Fetch API
-// RegistrarDiario captura o envio assíncrono do diário de bordo via AJAX/Fetch API
 func RegistrarDiario(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
@@ -50,6 +49,10 @@ func RegistrarDiario(c *gin.Context) {
 	pendencias := getMultipartFieldValue("pendencias")
 	veiculos := getMultipartFieldValue("veiculos")
 
+	// CAPTURA DO ID DO DIÁRIO (Se vier preenchido pelo JavaScript, significa que é uma EDIÇÃO)
+	diarioIDStr := getMultipartFieldValue("diario_id")
+	diarioID, _ := strconv.Atoi(diarioIDStr)
+
 	if projetoID == 0 || dataStr == "" || descricao == "" || participantes == "" {
 		println("[Erro Diario] Campos obrigatórios ausentes. ID recebido:", projetoID)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Campos obrigatórios ausentes"})
@@ -66,7 +69,6 @@ func RegistrarDiario(c *gin.Context) {
 	// Busca o nome do projeto no banco de dados
 	projeto, err := services.BuscarProjetoPorID(projetoID)
 	if err != nil {
-		// SE O ERRO ACONTECER AQUI, VAI APARECER NO SEU TERMINAL AGORA:
 		println("[Erro Diario] Erro ao buscar projeto com ID", projetoID, ":", err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Projeto relacionado não encontrado no banco"})
 		return
@@ -88,6 +90,7 @@ func RegistrarDiario(c *gin.Context) {
 	}
 
 	var diario models.RelatorioDiario
+	diario.ID = diarioID // Vincula o ID caso seja edição
 	diario.ProjetoID = projetoID
 	diario.Data = dataRelatorio
 	diario.Descricao = descricao
@@ -95,7 +98,21 @@ func RegistrarDiario(c *gin.Context) {
 	diario.Pendencias = pendencias
 	diario.Veiculos = veiculos
 
-	// Processa e armazena os arquivos físicos de imagens
+	// Se for EDIÇÃO, recupera as imagens que já estavam salvas para não perdê-las ao enviar novas
+	if diarioID > 0 {
+		// Buscamos o projeto completo para achar as imagens do relatório específico
+		projAtual, err := services.BuscarProjetoPorID(projetoID)
+		if err == nil {
+			for _, r := range projAtual.Relatorios {
+				if r.ID == diarioID {
+					diario.Imagens = r.Imagens
+					break
+				}
+			}
+		}
+	}
+
+	// Processa e armazena os novos arquivos físicos de imagens (se houver)
 	arquivos := form.File["imagens_diario[]"]
 	for _, arquivo := range arquivos {
 		nomeArquivo := fmt.Sprintf("%d_%s", time.Now().UnixNano(), arquivo.Filename)
@@ -109,18 +126,69 @@ func RegistrarDiario(c *gin.Context) {
 		}
 	}
 
-	// Envia para a camada de serviços persistir no banco de dados
-	err = services.SalvarRelatorioDiario(&diario)
-	if err != nil {
-		// SE O ERRO FOR NO BANCO DE DADOS, VAI APARECER AQUI:
-		println("[Erro Diario] Erro ao SalvarRelatorioDiario no Banco:", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao salvar relatório no banco"})
-		return
+	// EXECUÇÃO DO BANCO DE DADOS: Escolhe dinamicamente entre INSERT ou UPDATE
+	if diario.ID > 0 {
+		// --- MODO EDIÇÃO ---
+		err = services.AtualizarRelatorioDiario(&diario)
+		if err != nil {
+			println("[Erro Diario] Erro ao AtualizarRelatorioDiario no Banco:", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao atualizar relatório no banco"})
+			return
+		}
+	} else {
+		// --- MODO NOVO CADASTRO ---
+		err = services.SalvarRelatorioDiario(&diario)
+		if err != nil {
+			println("[Erro Diario] Erro ao SalvarRelatorioDiario no Banco:", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao salvar relatório no banco"})
+			return
+		}
 	}
 
 	// Retorna o sucesso esperado
-	c.JSON(http.StatusCreated, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"id":      diario.ID,
 		"imagens": diario.Imagens,
+		"status":  "processado",
 	})
+}
+
+// ExcluirRelatorio remove o relatório diário do banco e limpa seus anexos físicos
+func ExcluirRelatorio(c *gin.Context) {
+	idStr := c.Query("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID do relatório inválido"})
+		return
+	}
+
+	// 1. Busca os caminhos das imagens no banco antes de deletar o registro
+	imagens, err := services.BuscarImagensRelatorio(id)
+	if err == nil {
+		// Varre o array de strings contendo as URLs (/uploads/projeto/fotos/imagem.jpg)
+		for _, urlImagem := range imagens {
+			if urlImagem != "" {
+				// Remove a barra inicial '/' para virar um caminho relativo válido no Windows/Linux (uploads/...)
+				caminhoFisico := strings.TrimPrefix(urlImagem, "/")
+
+				// Apaga o arquivo físico do disco
+				if err := os.Remove(caminhoFisico); err != nil {
+					println("[Aviso Disco] Não foi possível apagar a imagem:", caminhoFisico, "Erro:", err.Error())
+				} else {
+					println("[Disco] Imagem apagada com sucesso:", caminhoFisico)
+				}
+			}
+		}
+	} else {
+		println("[Aviso Banco] Falha ao listar imagens para exclusão física:", err.Error())
+	}
+
+	// 2. Chama a camada de serviço para deletar o registro do banco de dados
+	err = services.ExcluirRelatorioDiario(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Erro ao deletar do banco: %v", err)})
+		return
+	}
+
+	c.Status(http.StatusOK)
 }

@@ -248,6 +248,28 @@
             padding: 15px;
         }
     } 
+    .acoes-relatorio {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 15px;
+        padding-top: 12px;
+        border-top: 1px dashed #dee2e6;
+    }
+    .btn-relatorio {
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: bold;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        color: white;
+    }
+    .btn-relatorio-editar { background-color: #007bff; }
+    .btn-relatorio-editar:hover { background-color: #0056b3; }
+    .btn-relatorio-excluir { background-color: #dc3545; }
+    .btn-relatorio-excluir:hover { background-color: #c82333; }
 
     </style>
     </head>
@@ -374,6 +396,8 @@
             </div>
 
             <!-- EXIBIÇÃO HISTÓRICA DOS RELATÓRIOS DO PROJETO -->
+            
+            
             <h3>Histórico de Relatórios Diários Cadastrados</h3>
             <div class="historico-grid" id="historico-lista">
                 {{ if .Relatorios }}
@@ -385,17 +409,28 @@
                         </summary>
                         
                         <div class="conteudo-expandido">
+                            <!-- Guardamos os valores de forma segura aqui para o JS ler sem quebrar com aspas -->
+                            <div class="dados-ocultos" style="display:none;"
+                                data-id="{{ .ID }}"
+                                data-desc="{{ .Descricao }}"
+                                data-pend="{{ .Pendencias }}"
+                                data-part="{{ .Participantes }}"
+                                data-veic="{{ .Veiculos }}">
+                            </div>
+                            
+
                             <label><strong>Atividades:</strong></label>
                             <div class="historico-texto">{{ .Descricao }}</div>
-                            <br></br>
+                            <br>
                             <label><strong>Pendências:</strong></label>
                             <div class="historico-texto">{{ .Pendencias }}</div>
-                            <br></br>
+                            <br>
                             <label><strong>Participantes:</strong></label>
                             <div class="historico-texto">{{ .Participantes }}</div>
-                            
-                            
-                            
+                            <br>
+                            <label><strong>Veículos:</strong></label>
+                            <div class="historico-texto">{{ .Veiculos }}</div>
+
                             {{ if .Imagens }}
                             <div class="historico-galeria">
                                 {{ range .Imagens }}
@@ -405,6 +440,17 @@
                                 {{ end }}
                             </div>
                             {{ end }}
+
+                            <!-- BLOCO DE AÇÕES DO RELATÓRIO DIÁRIO -->
+                            <div class="acoes-relatorio">
+                                <button type="button" class="btn-relatorio btn-relatorio-editar" onclick="prepararEdicaoDiario(this)">
+                                    Editar Registro
+                                </button>
+                                
+                                <button type="button" class="btn-relatorio btn-relatorio-excluir" onclick="excluirRelatorio(this)">
+                                    Excluir Registro
+                                </button>
+                            </div>
                         </div>
                     </details>
                     {{ end }}
@@ -412,28 +458,79 @@
                     <p id="msg-vazio" style="color: #6c757d; font-style: italic; margin-top: 10px;">Nenhum relatório diário foi cadastrado para este projeto até o momento.</p>
                 {{ end }}
             </div>
-             <!-- SEÇÃO DE LISTA DE MATERIAIS -->
-            <h3>Lista de Materiais</h3>
-            <button type="button" class="btn-add" onclick="adicionarMaterial()">+ Adicionar Material</button>
 
-            <div class="tarefa-header" style="grid-template-columns: 1fr 5fr 2fr 1fr; background: #e2e3e5;">
-                <div>Item</div>
-                <div>Descrição do Material</div>
-                <div>Quantidade</div>
-                <div class="center-lbl">Ação</div>
-            </div>
+            <!-- LÓGICA JAVASCRIPT ATUALIZADA -->
+            <script>
+            function prepararEdicaoDiario(botao) {
+                // 1. O JavaScript sobe até o container do histórico e lê a div oculta de forma segura
+                const container = botao.closest('.conteudo-expandido');
+                const dados = container.querySelector('.dados-ocultos');
+                
+                const id = dados.getAttribute('data-id');
+                const descricao = dados.getAttribute('data-desc');
+                const pendencias = dados.getAttribute('data-pend');
+                const participantes = dados.getAttribute('data-part');
+                const veiculos = dados.getAttribute('data-veic');
 
-            <div id="materiais-container">
-                {{range .Materiais}}
-                <div class="tarefa-row mat-row" style="grid-template-columns: 1fr 5fr 2fr 1fr;">
-                    <input type="number" name="mat_item[]" value="{{.Item}}" readonly style="background: #f0f0f0; text-align: center;">
-                    <input type="text" name="mat_descricao[]" value="{{.Descricao}}" required>
-                    <input type="number" name="mat_quantidade[]" value="{{.Quantidade}}" min="1" required>
-                    <button type="button" class="btn-del" onclick="removerMaterial(this)">X</button>
-                </div>
-                {{end}}
-            </div>
+                // 2. Mapeia os campos de texto do formulário na sua página
+                const campoDesc = document.querySelector('textarea[name="descricao"]') || document.getElementById('diario-descricao');
+                const campoPend = document.querySelector('textarea[name="pendencias"]') || document.getElementById('diario-pendencias');
+                const campoPart = document.querySelector('input[name="participantes"]') || document.getElementById('diario-participantes');
+                const campoVeic = document.querySelector('input[name="veiculos"]') || document.getElementById('diario-veiculos');
+                
+                if (campoDesc) campoDesc.value = descricao;
+                if (campoPend) campoPend.value = pendencias;
+                if (campoPart) campoPart.value = participantes;
+                if (campoVeic) campoVeic.value = veiculos;
 
+                // 3. Insere o ID oculto no formulário para o Go saber que é um UPDATE
+                let formDiario = campoDesc ? campoDesc.closest('form') : null;
+                if (formDiario) {
+                    let inputId = formDiario.querySelector('input[name="diario_id"]');
+                    if (!inputId) {
+                        inputId = document.createElement('input');
+                        inputId.type = 'hidden';
+                        inputId.name = 'diario_id';
+                        formDiario.appendChild(inputId);
+                    }
+                    inputId.value = id;
+                    
+                    // Atualiza o texto do botão do formulário
+                    const btnSalvar = formDiario.querySelector('button[type="submit"]');
+                    if (btnSalvar) btnSalvar.innerText = "💾 Salvar Alterações do Relatório";
+                    
+                    // Rola a tela até o formulário para você começar a editar
+                    formDiario.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+
+            function excluirRelatorio(botao) {
+                // Aqui está o seu código de exclusão atualizado para ler o ID de forma segura:
+                const container = botao.closest('.conteudo-expandido');
+                const dados = container.querySelector('.dados-ocultos');
+                const relatorioId = dados.getAttribute('data-id');
+
+                if (confirm("⚠️ Tem certeza que deseja apagar permanentemente este relatório diário?")) {
+                    fetch(`/projetos/diario/excluir?id=${relatorioId}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            alert("✨ Relatório excluído com sucesso!");
+                            window.location.reload(); 
+                        } else {
+                            alert("❌ Erro ao tentar excluir o relatório.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Erro:", error);
+                        alert("🌐 Erro de conexão.");
+                    });
+                }
+            }
+
+            </script>
+            
             <script>
                 function renumerarItens() {
                     const linhas = document.querySelectorAll("#materiais-container .mat-row");
