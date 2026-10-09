@@ -9,6 +9,11 @@ async function enviarRelatorioDiario() {
     const projetoIdInput = document.querySelector('input[name="id"]');
     const projetoId = projetoIdInput ? projetoIdInput.value : "";
 
+    // 🌟 CAPTURA O ID OCULTO SE O BLOCO ESTIVER NO MODO EDIÇÃO
+    const blocoDiario = document.getElementById('bloco-diario');
+    const inputId = blocoDiario ? blocoDiario.querySelector('input[name="diario_id"]') : null;
+    const isEdicao = inputId && inputId.value !== "";
+
     if (!dataInput.value || !descricaoInput.value.trim()) {
         alert("Por favor, preencha a Data, Descrição e Participantes do relatório diário antes de salvar.");
         return;
@@ -21,6 +26,12 @@ async function enviarRelatorioDiario() {
     formData.append("participantes", participantesInput.value);
     formData.append("pendencias", pendenciasInput.value);
     formData.append("veiculos", veiculosInput.value);
+    
+    // 🌟 SE FOR EDIÇÃO, COMPARTILHA O ID COM O GO PARA EVITAR DUPLICIDADE
+    if (isEdicao) {
+        formData.append("diario_id", inputId.value);
+    }
+
     if (imagensInput.files) {
         Array.from(imagensInput.files).forEach(file => {
             formData.append("imagens_diario[]", file);
@@ -39,6 +50,14 @@ async function enviarRelatorioDiario() {
 
         const resultado = await resposta.json();
 
+        // 🌟 SE FOR UMA EDIÇÃO CONCLUÍDA, ATUALIZA A TELA DO BANCO PARA EVITAR DUPLICADOS VISUAIS
+        if (isEdicao) {
+            alert("Relatório Diário alterado com sucesso!");
+            window.location.reload();
+            return;
+        }
+
+        // --- MANTÉM SEU COMPORTAMENTO ORIGINAL DE INSERÇÃO RÁPIDA APENAS PARA NOVOS CADASTROS ---
         const msgVazio = document.getElementById("msg-vazio");
         if (msgVazio) msgVazio.remove();
 
@@ -77,6 +96,7 @@ async function enviarRelatorioDiario() {
         const lista = document.getElementById("historico-lista");
         lista.insertBefore(novoItem, lista.firstChild);
 
+        // Limpa os campos após registrar novo item
         dataInput.value = "";
         descricaoInput.value = "";
         pendenciasInput.value = "";
@@ -93,49 +113,85 @@ async function enviarRelatorioDiario() {
     }
 }
 
-
-function prepararEdicaoDiario(botao) {
-    // 1. O JavaScript sobe até o container do histórico e lê a div oculta de forma segura
-    const container = botao.closest('.conteudo-expandido');
-    const dados = container.querySelector('.dados-ocultos');
+function prepararEdicaoDiarioDefinitivo(botao) {
+    console.log("-> Botão de editar relatório clicado!");
     
-    const id = dados.getAttribute('data-id');
-    const descricao = dados.getAttribute('data-desc');
-    const pendencias = dados.getAttribute('data-pend');
-    const participantes = dados.getAttribute('data-part');
-    const veiculos = dados.getAttribute('data-veic');
-
-    // 2. Mapeia os campos de texto do formulário na sua página
-    const campoDesc =  document.getElementById('diario-descricao');
-    const campoPend =  document.getElementById('diario-pendencias');
-    const campoPart = document.getElementById('diario-participantes');
-    const campoVeic = document.getElementById('diario-veiculos');
-    
-    if (campoDesc) campoDesc.value = descricao;
-    if (campoPend) campoPend.value = pendencias;
-    if (campoPart) campoPart.value = participantes;
-    if (campoVeic) campoVeic.value = veiculos;
-
-    // 3. Insere o ID oculto no formulário para o Go saber que é um UPDATE
-    let formDiario = campoDesc ? campoDesc.closest('form') : null;
-    if (formDiario) {
-        let inputId = formDiario.querySelector('input[name="diario_id"]');
-        if (!inputId) {
-            inputId = document.createElement('input');
-            inputId.type = 'hidden';
-            inputId.name = 'diario_id';
-            formDiario.appendChild(inputId);
+    try {
+        // 1. Sobe até o bloco do histórico expandido
+        const container = botao.closest('.conteudo-expandido');
+        if (!container) {
+            console.error("Erro: Não foi possível encontrar o bloco '.conteudo-expandido'.");
+            return;
         }
-        inputId.value = id;
-        
-        // Atualiza o texto do botão do formulário
-        const btnSalvar = formDiario.querySelector('button[type="submit"]');
-        if (btnSalvar) btnSalvar.innerText = "💾 Salvar Alterações do Relatório";
-        
-        // Rola a tela até o formulário para você começar a editar
-        formDiario.scrollIntoView({ behavior: 'smooth' });
+
+        // 2. Localiza a div de dados ocultos que você já tem no HTML
+        const dados = container.querySelector('.dados-ocultos');
+        if (!dados) {
+            console.error("Erro: Elemento '.dados-ocultos' não encontrado no HTML.");
+            return;
+        }
+
+        // 3. Puxa os dados com segurança direto dos atributos data-*
+        const id = dados.getAttribute('data-id');
+        const dataRelatorio = dados.getAttribute('data-data');
+        const descricao = dados.getAttribute('data-desc') || "";
+        const pendencias = dados.getAttribute('data-pend') || "";
+        const participantes = dados.getAttribute('data-part') || "";
+        const veiculos = dados.getAttribute('data-veic') || "";
+
+        console.log(`-> Dados Extraídos da Tag Oculta: ID=${id} | Veículos=${veiculos}`);
+
+        // 4. Mapeia as caixas de texto do seu formulário na página (Lançar Novo Relatório Diário)
+        const campoData = document.getElementById('diario_data');
+        const campoDesc = document.getElementById('diario_descricao');
+        const campoPend = document.getElementById('diario_pendencias');
+        const campoPart = document.getElementById('diario_participantes');
+        const campoVeic = document.getElementById('diario_veiculos');
+
+        // Alerta caso os IDs das caixas de texto tenham mudado de nome na página
+        if (!campoData || !campoDesc || !campoPend || !campoPart || !campoVeic) {
+            alert("Erro Técnico: As caixas do formulário de digitação do diário não foram encontradas na página.");
+            return;
+        }
+
+        // 5. Injeta os dados históricos de volta no formulário
+        campoData.value = dataRelatorio;
+        campoDesc.value = descricao;
+        campoPend.value = pendencias;
+        campoPart.value = participantes;
+        campoVeic.value = veiculos;
+
+        // 6. Gerencia o ID oculto no formulário para sinalizar Modo Edição ao Go
+        const blocoDiario = document.getElementById('bloco-diario');
+        if (blocoDiario) {
+            let inputId = blocoDiario.querySelector('input[name="diario_id"]');  
+            if (!inputId) { 
+                inputId = document.createElement('input');
+                inputId.type = 'hidden';
+                inputId.name = 'diario_id';
+                blocoDiario.appendChild(inputId);
+            }    
+            inputId.value = id;
+            
+            // Atualiza o texto do botão principal do formulário para dar o feedback de edição
+            const btnSalvar = blocoDiario.querySelector('button');
+            if (btnSalvar) {
+                btnSalvar.innerText = "💾 Salvar Alterações do Relatório";
+                btnSalvar.style.background = "#fd7e14"; // Muda para laranja indicando alteração
+            }
+            
+            // Rola a tela suavemente até o formulário
+            blocoDiario.scrollIntoView({ behavior: 'smooth' });
+            console.log("-> Sucesso: Campos populados e tela movida!");
+        }
+
+    } catch (erro) {
+        console.error("Falha ao processar o script JavaScript de edição:", erro);
     }
 }
+
+
+
 
 function excluirRelatorio(botao) {
     // Aqui está o seu código de exclusão atualizado para ler o ID de forma segura:

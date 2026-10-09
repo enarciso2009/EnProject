@@ -1,8 +1,8 @@
 Incluir veículos utilizados no Projeto: este novo campo ficará em relatórios diários ok
-Na pagina inicial tirar o ID e acrescentar o progresso do projeto totalizado das tarefas diárias 
+Na pagina inicial tirar o ID e acrescentar o progresso do projeto totalizado das tarefas diárias ok 
 Salvar os arquivos e fotos Geral e Diário dentro de uma pasta com o nome do projeto ok
 Colocar um botão de Editar e Excluir tarefas diárias depois de cadastrada. 
-Colocar um botão de Excluir Projeto, este botão precisa perguntar 3 vezes se tem certeza apagar,
+Colocar um botão de Excluir Projeto, este botão precisa perguntar 3 vezes se tem certeza apagar, 
 após apagar o projeto apagará também as pastas de arquivos ok 
 
 
