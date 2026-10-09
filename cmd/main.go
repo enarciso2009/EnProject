@@ -16,6 +16,7 @@ import (
 )
 
 func main() {
+
 	// 1. CARREGA AS VARIÁVEIS DE AMBIENTE DO .ENV PRIMEIRO
 	err := godotenv.Load()
 	if err != nil {
@@ -29,10 +30,13 @@ func main() {
 	r := gin.Default()
 
 	// Carrega os arquivos HTML da sua pasta web
-	r.LoadHTMLGlob("web/*")
+	r.LoadHTMLGlob("web/*.html")
 
 	// Configura o diretório público de uploads de fotos de forma correta
 	r.Static("/uploads", "./uploads")
+
+	r.Static("/css", "./web/css")
+	r.Static("/js", "./web/js")
 
 	// -------------------------------------------------------------------------
 	// 4. ROTAS PÚBLICAS (Acessíveis sem qualquer tipo de login)
@@ -85,6 +89,7 @@ func main() {
 		admin.POST("/usuario/novo", handler.ProcessarCadastroUsuario)
 
 		admin.DELETE("/projeto/excluir", handler.ExcluirProjeto)
+
 		admin.DELETE("/projetos/diario/excluir", handler.ExcluirRelatorio)
 
 	}

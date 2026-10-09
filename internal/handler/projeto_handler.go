@@ -175,6 +175,7 @@ func EditarProjeto(c *gin.Context) {
 	idStr := c.Query("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
+		println("ID inválido ou não fornecido, criando novo projeto.")
 		c.String(http.StatusBadRequest, "ID de projeto inválido")
 		return
 	}

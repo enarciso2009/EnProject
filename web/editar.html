@@ -3,281 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Editar Projeto #{{.ID}}</title>
-    <style>
-        body { font-family: sans-serif; background: #f0f2f5; margin: 30px; color: #333; }
-        .box { background: white; padding: 25px; border-radius: 8px; max-width: 1000px; margin: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
-        label { font-weight: bold; margin-bottom: 5px; }
-        input, select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; justify-self: center; }
-        
-        /* Estilos das Imagens na Edição */
-        .preview-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-        .preview-img { width: 100px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .galeria-atual { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px dashed #ccc; }
-        .item-foto { display: inline-block; position: relative; margin-right: 5px; }
-
-        /* Estilo do botão customizado de upload */
-        .btn-upload-custom { display: inline-block; background: #007bff; color: white; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; text-align: center; width: fit-content; transition: background 0.2s; }
-        .btn-upload-custom:hover { background: #0056b3; }
-        .input-file-oculto { display: none; }
-
-        /* Estrutura de Tabela Alinhada Sem a Coluna de Horas */
-        .tarefa-header { display: grid; grid-template-columns: 2fr 1.5fr 1.1fr 1.1fr 1.2fr 0.6fr 0.5fr; gap: 10px; font-weight: bold; margin-bottom: 5px; background: #e9ecef; padding: 8px; border-radius: 4px; text-align: center; font-size: 13px; }
-        .tarefa-header div { text-align: left; }
-        .tarefa-header .center-lbl { text-align: center; }
-        .tarefa-row { display: grid; grid-template-columns: 2fr 1.5fr 1.1fr 1.1fr 1.2fr 0.6fr 0.5fr; gap: 10px; margin-bottom: 10px; align-items: center; }
-        
-        /* Estilos para a Barra de Progresso Visual */
-        .progress-container { display: flex; flex-direction: column; gap: 3px; }
-        .progress-bar-bg { background: #e9ecef; border-radius: 4px; height: 8px; width: 100%; overflow: hidden; border: 1px solid #ccc; }
-        .progress-bar-fill { background: #28a745; height: 100%; width: 0%; transition: width 0.3s; }
-
-        button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; }
-        button:hover { background: #0056b3; }
-        .btn-add { background: #28a745; margin-bottom: 20px; }
-        .btn-add:hover { background: #218838; }
-        .btn-del { background: #dc3545; padding: 8px; font-size: 12px; }
-        .btn-del:hover { background: #c82333; }
-        .btn-voltar { background: #6c757d; text-decoration: none; padding: 10px 15px; border-radius: 4px; color: white; font-weight: bold; font-size: 14px; margin-right: 10px; display: inline-block; }
-        h2, h3 { color: #1a1a1a; border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-top: 30px; }
-
-        /* Customização para a Grade do Diário de Bordo */
-        .diario-block { background: #f8f9fa; padding: 20px; border-radius: 6px; border: 1px solid #dee2e6; margin-top: 15px; }
-        
-        /* Estilos da Grade de Histórico Minimizado (Retrátil) */
-        .historico-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
-        .historico-item { background: #ffffff; border: 1px solid #e0e0e0; border-left: 5px solid #007bff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s; }
-        .historico-item[open] { border-left-color: #28a745; box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
-        
-        /* Cabeçalho clicável que ativa a expansão */
-        .historico-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #666; cursor: pointer; list-style: none; font-weight: bold; user-select: none; }
-        .historico-header::-webkit-details-marker { display: none; } /* Esconde a seta padrão */
-        
-        .historico-data { font-weight: bold; color: #1a1a1a; font-size: 15px; }
-        .seta-indicadora { font-size: 12px; color: #007bff; font-weight: normal; }
-        
-        .historico-item[open] .seta-indicadora { color: #28a745; }
-        
-        /* Bloco interno expandido */
-        .conteudo-expandido { padding: 0 15px 15px 15px; border-top: 1px dashed #e0e0e0; margin-top: 5px; padding-top: 15px; }
-        .historico-texto { font-size: 14px; line-height: 1.5; white-space: pre-line; color: #444; }
-        .historico-galeria { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-        .historico-thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; }
-
-        /* TESTES */
-            /* Estilos Gerais e Container */
-    .box {
-        max-width: 1000px;
-        margin: 30px auto;
-        padding: 30px;
-        background: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-        color: #333333;
-    }
-
-    .box h2 {
-        font-size: 24px;
-        color: #1a202c;
-        margin-bottom: 25px;
-        padding-bottom: 12px;
-        border-bottom: 2px solid #edf2f7;
-    }
-
-    .box h3 {
-        font-size: 18px;
-        color: #2d3748;
-        margin: 35px 0 15px 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    /* Grid para Informações Gerais do Projeto */
-    .form-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-    }
-
-    .form-group {
-        margin-bottom: 5px;
-    }
-
-    /* Inputs de largura total (Textareas e grupos que ocupam 2 colunas) */
-    .full-width {
-        grid-column: span 2;
-    }
-
-    /* Estilização de Labels e Campos */
-    .form-group label {
-        display: block;
-        font-size: 14px;
-        font-weight: 600;
-        color: #4a5568;
-        margin-bottom: 8px;
-    }
-
-    .form-group input[type="text"],
-    .form-group textarea,
-    .tarefa-row input {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #cbd5e0;
-        border-radius: 6px;
-        font-size: 15px;
-        background-color: #fff;
-        color: #2d3748;
-        transition: all 0.2s ease;
-        box-sizing: border-box;
-    }
-
-    .form-group input:focus,
-    .form-group textarea:focus,
-    .tarefa-row input:focus {
-        border-color: #3182ce;
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
-    }
-
-    .form-group textarea {
-        resize: vertical;
-    }
-
-    /* Seção de Tarefas Dinâmicas */
-    .tarefa-header {
-        display: grid;
-        grid-template-columns: 2fr 1.5fr 1.2fr 1.2fr 1fr 1fr 0.6fr;
-        gap: 12px;
-        padding: 10px 12px;
-        background: #f7fafc;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 13px;
-        color: #718096;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 8px;
-    }
-
-    .tarefa-row {
-        display: grid;
-        grid-template-columns: 2fr 1.5fr 1.2fr 1.2fr 1fr 1fr 0.6fr;
-        gap: 12px;
-        align-items: center;
-        padding: 8px 12px;
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        margin-bottom: 8px;
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .tarefa-row:hover {
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        border-color: #cbd5e0;
-    }
-
-    .center-lbl {
-        text-align: center;
-    }
-
-    /* Estilos específicos para inputs dentro da tabela */
-    .tarefa-row input[type="date"] {
-        padding: 8px 10px;
-    }
-
-    /* Botão de Ação / Remover (Exemplo básico caso use) */
-    .btn-remove {
-        background: none;
-        border: none;
-        color: #e53e3e;
-        cursor: pointer;
-        font-size: 16px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 8px;
-        border-radius: 4px;
-    }
-    .btn-remove:hover {
-        background: #fff5f5;
-    }
-
-    /* Área de Ações do Formulário (Salvar) */
-    .form-actions {
-        margin-top: 30px;
-        padding-top: 20px;
-        border-top: 2px solid #edf2f7;
-        display: flex;
-        justify-content: flex-end;
-    }
-
-    .btn-submit {
-        background: #3182ce;
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        font-size: 16px;
-        font-weight: 600;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: background 0.2s;
-    }
-
-    .btn-submit:hover {
-        background: #2b6cb0;
-    }
-
-    /* Responsividade Básica */
-    @media (max-width: 768px) {
-        .form-grid {
-            grid-template-columns: 1fr;
-        }
-        .full-width {
-            grid-column: span 1;
-        }
-        .tarefa-header {
-            display: none; /* Em telas muito pequenas, tabelas em linha precisam virar blocos */
-        }
-        .tarefa-row {
-            grid-template-columns: 1fr;
-            gap: 8px;
-            padding: 15px;
-        }
-    } 
-    .acoes-relatorio {
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        margin-top: 15px;
-        padding-top: 12px;
-        border-top: 1px dashed #dee2e6;
-    }
-    .btn-relatorio {
-        padding: 6px 12px;
-        border-radius: 4px;
-        font-size: 13px;
-        font-weight: bold;
-        text-decoration: none;
-        cursor: pointer;
-        border: none;
-        color: white;
-    }
-    .btn-relatorio-editar { background-color: #007bff; }
-    .btn-relatorio-editar:hover { background-color: #0056b3; }
-    .btn-relatorio-excluir { background-color: #dc3545; }
-    .btn-relatorio-excluir:hover { background-color: #c82333; }
-
-    </style>
     </head>
+    
+    <link rel="stylesheet" href="/css/styles.css">
+
 <body>
   <div class="box">
     <h2>Editar Projeto — {{.Nome}}</h2>
     <form action="/editar" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="id" value="{{.ID}}">
+        
         
         <!-- Grid de Informações Gerais -->
         <div class="form-grid">
@@ -394,9 +129,6 @@
                 
                 <button type="button" onclick="enviarRelatorioDiario()" style="background: #17a2b8; margin-top: 10px;">+ Registrar Relatório Diário</button>
             </div>
-
-            <!-- EXIBIÇÃO HISTÓRICA DOS RELATÓRIOS DO PROJETO -->
-            
             
             <h3>Histórico de Relatórios Diários Cadastrados</h3>
             <div class="historico-grid" id="historico-lista">
@@ -412,13 +144,12 @@
                             <!-- Guardamos os valores de forma segura aqui para o JS ler sem quebrar com aspas -->
                             <div class="dados-ocultos" style="display:none;"
                                 data-id="{{ .ID }}"
+                                data-data="{{ .Data.Format "2006-01-02" }}"
                                 data-desc="{{ .Descricao }}"
                                 data-pend="{{ .Pendencias }}"
                                 data-part="{{ .Participantes }}"
                                 data-veic="{{ .Veiculos }}">
                             </div>
-                            
-
                             <label><strong>Atividades:</strong></label>
                             <div class="historico-texto">{{ .Descricao }}</div>
                             <br>
@@ -430,7 +161,7 @@
                             <br>
                             <label><strong>Veículos:</strong></label>
                             <div class="historico-texto">{{ .Veiculos }}</div>
-
+                            <br>
                             {{ if .Imagens }}
                             <div class="historico-galeria">
                                 {{ range .Imagens }}
@@ -442,7 +173,7 @@
                             {{ end }}
 
                             <!-- BLOCO DE AÇÕES DO RELATÓRIO DIÁRIO -->
-                            <div class="acoes-relatorio">
+                            <div class="acoes-relatorio" style="margin-top: 15px;">
                                 <button type="button" class="btn-relatorio btn-relatorio-editar" onclick="prepararEdicaoDiario(this)">
                                     Editar Registro
                                 </button>
@@ -459,106 +190,27 @@
                 {{ end }}
             </div>
 
-            <!-- LÓGICA JAVASCRIPT ATUALIZADA -->
-            <script>
-            function prepararEdicaoDiario(botao) {
-                // 1. O JavaScript sobe até o container do histórico e lê a div oculta de forma segura
-                const container = botao.closest('.conteudo-expandido');
-                const dados = container.querySelector('.dados-ocultos');
-                
-                const id = dados.getAttribute('data-id');
-                const descricao = dados.getAttribute('data-desc');
-                const pendencias = dados.getAttribute('data-pend');
-                const participantes = dados.getAttribute('data-part');
-                const veiculos = dados.getAttribute('data-veic');
+                  <!-- SEÇÃO DE LISTA DE MATERIAIS -->
+            <h3>Lista de Materiais</h3>
+            <button type="button" class="btn-add" onclick="adicionarMaterial()">+ Adicionar Material</button>
 
-                // 2. Mapeia os campos de texto do formulário na sua página
-                const campoDesc = document.querySelector('textarea[name="descricao"]') || document.getElementById('diario-descricao');
-                const campoPend = document.querySelector('textarea[name="pendencias"]') || document.getElementById('diario-pendencias');
-                const campoPart = document.querySelector('input[name="participantes"]') || document.getElementById('diario-participantes');
-                const campoVeic = document.querySelector('input[name="veiculos"]') || document.getElementById('diario-veiculos');
-                
-                if (campoDesc) campoDesc.value = descricao;
-                if (campoPend) campoPend.value = pendencias;
-                if (campoPart) campoPart.value = participantes;
-                if (campoVeic) campoVeic.value = veiculos;
+            <div class="tarefa-header" style="grid-template-columns: 1fr 5fr 2fr 1fr; background: #e2e3e5;">
+                <div>Item</div>
+                <div>Descrição do Material</div>
+                <div>Quantidade</div>
+                <div class="center-lbl">Ação</div>
+            </div>
 
-                // 3. Insere o ID oculto no formulário para o Go saber que é um UPDATE
-                let formDiario = campoDesc ? campoDesc.closest('form') : null;
-                if (formDiario) {
-                    let inputId = formDiario.querySelector('input[name="diario_id"]');
-                    if (!inputId) {
-                        inputId = document.createElement('input');
-                        inputId.type = 'hidden';
-                        inputId.name = 'diario_id';
-                        formDiario.appendChild(inputId);
-                    }
-                    inputId.value = id;
-                    
-                    // Atualiza o texto do botão do formulário
-                    const btnSalvar = formDiario.querySelector('button[type="submit"]');
-                    if (btnSalvar) btnSalvar.innerText = "💾 Salvar Alterações do Relatório";
-                    
-                    // Rola a tela até o formulário para você começar a editar
-                    formDiario.scrollIntoView({ behavior: 'smooth' });
-                }
-            }
-
-            function excluirRelatorio(botao) {
-                // Aqui está o seu código de exclusão atualizado para ler o ID de forma segura:
-                const container = botao.closest('.conteudo-expandido');
-                const dados = container.querySelector('.dados-ocultos');
-                const relatorioId = dados.getAttribute('data-id');
-
-                if (confirm("⚠️ Tem certeza que deseja apagar permanentemente este relatório diário?")) {
-                    fetch(`/projetos/diario/excluir?id=${relatorioId}`, {
-                        method: 'DELETE'
-                    })
-                    .then(response => {
-                        if (response.ok) {
-                            alert("✨ Relatório excluído com sucesso!");
-                            window.location.reload(); 
-                        } else {
-                            alert("❌ Erro ao tentar excluir o relatório.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Erro:", error);
-                        alert("🌐 Erro de conexão.");
-                    });
-                }
-            }
-
-            </script>
-            
-            <script>
-                function renumerarItens() {
-                    const linhas = document.querySelectorAll("#materiais-container .mat-row");
-                    linhas.forEach((linha, index) => {
-                        linha.querySelector('input[name="mat_item[]"]').value = index + 1;
-                    });
-                }
-
-                function adicionarMaterial() {
-                    const container = document.getElementById("materiais-container");
-                    const row = document.createElement("div");
-                    row.className = "tarefa-row mat-row";
-                    row.style.gridTemplateColumns = "1fr 5fr 2fr 1fr";
-                    row.innerHTML = `
-                        <input type="number" name="mat_item[]" readonly style="background: #f0f0f0; text-align: center;">
-                        <input type="text" name="mat_descricao[]" placeholder="Descrição do Material" required>
-                        <input type="number" name="mat_quantidade[]" value="1" min="1" required>
-                        <button type="button" class="btn-del" onclick="removerMaterial(this)">X</button>
-                    `;
-                    container.appendChild(row);
-                    renumerarItens();
-                }
-
-                function removerMaterial(botao) {
-                    botao.parentElement.remove();
-                    renumerarItens();
-                }
-            </script>
+            <div id="materiais-container">
+                {{range .Materiais}}
+                <div class="tarefa-row mat-row" style="grid-template-columns: 1fr 5fr 2fr 1fr;">
+                    <input type="number" name="mat_item[]" value="{{.Item}}" readonly style="background: #f0f0f0; text-align: center;">
+                    <input type="text" name="mat_descricao[]" value="{{.Descricao}}" required>
+                    <input type="number" name="mat_quantidade[]" value="{{.Quantidade}}" min="1" required>
+                    <button type="button" class="btn-del" onclick="removerMaterial(this)">X</button>
+                </div>
+                {{end}}
+            </div>
             
             <!-- GALERIA GERAL DO PROJETO -->
             <h3>Arquivos e Evidências Gerais do Projeto</h3>
@@ -571,23 +223,13 @@
                 <div id="preview-imagens" class="preview-container"></div>
 
             </div>
-            <!-- -------------------------------------------- -->
-           
+            
             {{ if and .Imagens (gt (len .Imagens) 0) (ne (index .Imagens 0) "") }}
                 <div class="galeria-atual">
                     {{ range .Imagens }}
                         {{ if ne . "" }} <!-- Garante que não vai renderizar strings vazias -->
                         <div class="item-foto" style="text-align: center; border: 1px solid #ddd; padding: 10px; border-radius: 6px; background: #fff;">
-                            <script>
-                                var url = "{{ . }}";
-                                var extensao = url.split('.').pop().toLowerCase();
-                                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extensao)) {
-                                    document.write('<img src="{{ . }}" class="preview-img" alt="Foto do Projeto">');
-                                } else {
-                                    document.write('<div style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: #e9ecef; border-radius: 6px; font-weight: bold; color: #495057; font-size: 12px; border: 1px solid #ccc;">📄 .' + extensao.toUpperCase() + '</div>');
-                                }
-                            </script>
-
+                            
                             <input type="hidden" name="fotos_existentes[]" value="{{ . }}">
                             <br>
                             <a href="{{ . }}" target="_blank" style="font-size: 12px; text-decoration: none; color: #007bff; display: block; margin: 5px 0;">Visualizar</a>
@@ -600,7 +242,6 @@
                 <p style="color: #6c757d; font-style: italic; margin-top: 10px;">Nenhuma imagem ou arquivo foi vinculado a este projeto até o momento.</p>
             {{ end }}
             
-            
             <div class="form-group">
                 <h3>Encerramento</h3>
                 <textarea name="encerramento" rows="2" placeholder="Encerramento considerações finais do projeto...">{{.Encerramento}}</textarea>
@@ -611,190 +252,10 @@
             <button type="submit" style="background: #28a745;">Salvar Alterações do Projeto</button>
         </form>
     </div>
-        <!-- LOGICA SCRIPT JAVASCRIPT PARA ENVIO ASSÍNCRONO (AJAX) -->
-    <script>
-        function atualizarBarraVisual(input) {
-            let valor = parseInt(input.value) || 0;
-            if (valor > 100) { valor = 100; input.value = 100; }
-            if (valor < 0) { valor = 0; input.value = 0; }
-            
-            // Atualiza a largura da barra verde
-            const barra = input.parentElement.querySelector(".progress-bar-fill");
-            if (barra) barra.style.width = valor + "%";
-
-            // Se chegar a 100%, marca o checkbox de concluído automaticamente
-            const row = input.closest(".tarefa-row");
-            const checkbox = row.querySelector('input[type="checkbox"]');
-            const hidden = row.querySelector('input[name="tarefa_concluido[]"]');
-            
-            if (valor === 100) {
-                if (checkbox) checkbox.checked = true;
-                if (hidden) hidden.value = "true";
-            } else {
-                if (checkbox) checkbox.checked = false;
-                if (hidden) hidden.value = "false";
-            }
-        }
-
-        function vincularConclusao(checkbox) {
-            const row = checkbox.closest(".tarefa-row");
-            const hidden = row.querySelector('input[name="tarefa_concluido[]"]');
-            const progressoInput = row.querySelector('input[name="tarefa_progresso[]"]');
-            const barra = row.querySelector(".progress-bar-fill");
-
-            if (checkbox.checked) {
-                if (hidden) hidden.value = "true";
-                if (progressoInput) progressoInput.value = 100;
-                if (barra) barra.style.width = "100%";
-            } else {
-                if (hidden) hidden.value = "false";
-                if (progressoInput && progressoInput.value == 100) {
-                    progressoInput.value = 90; // Regressa para 90% se desmarcar
-                    if (barra) barra.style.width = "90%";
-                }
-            }
-        }
-
-        async function enviarRelatorioDiario() {
-            const dataInput = document.getElementById("diario_data");
-            const descricaoInput = document.getElementById("diario_descricao");
-            const imagensInput = document.getElementById("imagens_diario");
-            const participantesInput = document.getElementById("diario_participantes");
-            const pendenciasInput = document.getElementById("diario_pendencias");
-            const veiculosInput = document.getElementById("diario_veiculos");
-            
-            const projetoIdInput = document.querySelector('input[name="id"]');
-            const projetoId = projetoIdInput ? projetoIdInput.value : "";
-
-            if (!dataInput.value || !descricaoInput.value.trim()) {
-                alert("Por favor, preencha a Data, Descrição e Participantes do relatório diário antes de salvar.");
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append("projeto_id", projetoId);
-            formData.append("data", dataInput.value);
-            formData.append("descricao", descricaoInput.value);
-            formData.append("participantes", participantesInput.value);
-            formData.append("pendencias", pendenciasInput.value);
-            formData.append("veiculos", veiculosInput.value);
-            if (imagensInput.files) {
-                Array.from(imagensInput.files).forEach(file => {
-                    formData.append("imagens_diario[]", file);
-                });
-            }
-
-            try {
-                const resposta = await fetch("/projetos/diario", {
-                    method: "POST",
-                    body: formData
-                });
-
-                if (!resposta.ok) {
-                    throw new Error("Erro do servidor ao salvar o relatório.");
-                }
-
-                const resultado = await resposta.json();
-
-                const msgVazio = document.getElementById("msg-vazio");
-                if (msgVazio) msgVazio.remove();
-
-                const dataFormatada = dataInput.value.split('-').reverse().join('/');
-
-                let galeriaHtml = '';
-                if (resultado.imagens && resultado.imagens.length > 0) {
-                    galeriaHtml = `<div class="historico-galeria">`;
-                    resultado.imagens.forEach(url => {
-                        galeriaHtml += `
-                            <a href="${url}" target="_blank">
-                                <img src="${url}" class="historico-thumb" alt="Evidência Visual">
-                            </a>`;
-                    });
-                    galeriaHtml += `</div>`;
-                }
-
-                const novoItem = document.createElement("details");
-                novoItem.className = "historico-item";
-                novoItem.open = true;
-                novoItem.style.borderLeftColor = "#17a2b8";
-                novoItem.innerHTML = `
-                    <summary class="historico-header">
-                        <span class="historico-data">${dataFormatada}</span>
-                        <span class="seta-indicadora">Clique para fechar </span>
-                    </summary>
-                    <div class="conteudo-expandido">
-                        <div class="historico-texto">${descricaoInput.value}</div>
-                        <div class="historico-texto">${pendenciasInput.value}</div>
-                        <div class="historico-texto">${participantesInput.value}</div>
-                        ${galeriaHtml}
-                    </div>
-                `;
-
-                const lista = document.getElementById("historico-lista");
-                lista.insertBefore(novoItem, lista.firstChild);
-
-                dataInput.value = "";
-                descricaoInput.value = "";
-                pendenciasInput.value = "";
-                participantesInput.value = "";
-                veiculosInput.value = "";   
-                imagensInput.value = "";
-                document.getElementById("preview-imagens-novas-diario").innerHTML = "";
-
-                alert("Relatório Diário registrado com sucesso!");
-
-            } catch (error) {
-                console.error(error);
-                alert("Falha ao registrar o relatório. Verifique seu backend.");
-            }
-        }
-
-        function adicionarTarefa() {
-            const container = document.getElementById("tarefas-container");
-            const row = document.createElement("div");
-            row.className = "tarefa-row";
-            row.innerHTML = `
-                <input type="text" name="tarefa_nome[]" placeholder="Nova Tarefa" required>
-                <input type="text" name="tarefa_resp[]" placeholder="Responsável" required>
-                <input type="date" name="tarefa_inicio[]" required>
-                <input type="date" name="tarefa_fim[]" required>
-                <div class="progress-container">
-                    <input type="number" name="tarefa_progresso[]" value="0" min="0" max="100" placeholder="%" required oninput="atualizarBarraVisual(this)">
-                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 0%;"></div></div>
-                </div>
-                <input type="checkbox" onchange="vincularConclusao(this)">
-                <input type="hidden" name="tarefa_concluido[]" value="false">
-                <button type="button" class="btn-del" onclick="removerLinha(this)">X</button>
-            `;
-            container.appendChild(row);
-        }
-
-        function removerLinha(botao) {
-            botao.parentElement.remove();
-        }
-
-        
-        // Exibe miniaturas das imagens selecionadas localmente
-        function visualizarImagens(input) {
-            const container = document.getElementById("preview-imagens");
-            container.innerHTML = "";
-            if (input.files) {
-                Array.from(input.files).forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const img = document.createElement("img");
-                        img.className = "preview-img";
-                        img.src = e.target.result;
-                        container.appendChild(img);
-                    }
-                    reader.readAsDataURL(file);
-                });
-            }
-        }
-
-        function excluirFotoExistente(botao) {
-            botao.parentElement.remove();
-        }
-    </script>
+        <!-- LOGICA SCRIPT JAVASCRIPT -->
+        <script src="/js/diario.js"></script>
+        <script src="/js/galeria.js"></script>    
+        <script src="/js/material.js"></script>    
+        <script src="/js/diversos.js"></script>
 </body>
 </html>

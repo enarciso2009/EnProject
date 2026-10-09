@@ -59,7 +59,15 @@ func RegistrarDiario(c *gin.Context) {
 		return
 	}
 
-	dataRelatorio, err := time.Parse("2006-01-02", dataStr)
+	// 1. Carrega o fuso horário oficial do Brasil
+	fusoLocal, err := time.LoadLocation("America/Sao_Paulo")
+	if err != nil {
+		// Caso o servidor não possua a tabela de fusos, adota o fuso local da máquina
+		fusoLocal = time.Local
+	}
+
+	// 2. Faz o parse da data travando-a no fuso horário correto (Substitui o time.Parse antigo)
+	dataRelatorio, err := time.ParseInLocation("2006-01-02", dataStr, fusoLocal)
 	if err != nil {
 		println("[Erro Diario] Formato de data inválido:", dataStr)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de data inválido"})

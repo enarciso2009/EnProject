@@ -181,13 +181,13 @@ func BuscarProjetoPorID(id int) (*models.Projeto, error) {
 	}
 
 	// Busca dinâmica dos relatórios diários para o histórico da tela de edição (Incluindo pendencias e participantes)
-	queryDiarios := `SELECT id, data, descricao, imagens, COALESCE(participantes, ''), COALESCE(pendencias, '') FROM relatorios_diarios WHERE projeto_id = $1 ORDER BY data ASC`
+	queryDiarios := `SELECT id, data, descricao, imagens, COALESCE(participantes, ''), COALESCE(pendencias, ''), COALESCE(veiculos, '') FROM relatorios_diarios WHERE projeto_id = $1 ORDER BY data ASC`
 	diarioRows, err := database.DB.Query(ctx, queryDiarios, id)
 	if err == nil {
 		defer diarioRows.Close()
 		for diarioRows.Next() {
 			var r models.RelatorioDiario
-			err := diarioRows.Scan(&r.ID, &r.Data, &r.Descricao, &r.Imagens, &r.Participantes, &r.Pendencias)
+			err := diarioRows.Scan(&r.ID, &r.Data, &r.Descricao, &r.Imagens, &r.Participantes, &r.Pendencias, &r.Veiculos)
 			if err == nil {
 				r.ProjetoID = id
 				p.Relatorios = append(p.Relatorios, r)
