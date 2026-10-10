@@ -8,7 +8,11 @@
     <link rel="stylesheet" href="/css/pg_inicio.css">
 <body>
     <!-- BARRA DE NAVEGAÇÃO SUPERIOR REORGANIZADA -->
+     
     <div class="nav-topo">
+          <a href="https://trello.com/b/XawSwq3q/compras" target="_blank" class="btn-nav btn-compras" style="background-color: #6c757d; color: white; padding: 8px 14px; border-radius: 4px; font-size: 13px; font-weight: bold; text-decoration: none; transition: background 0.2s;">
+                Compras
+            </a>
         <!-- Lado Esquerdo -->
         <a href="/novo" class="btn-nav btn-projeto-novo">Novo Projeto</a>
         
@@ -17,11 +21,26 @@
         <a href="/logout" class="btn-nav btn-logout">Sair</a>
     </div>
     <div class="container">
-        <div class="top-bar">
+        <!-- 🌟 BARRA DO TOPO REORGANIZADA COM O FILTRO ALINHADO À DIREITA -->
+        <div class="top-bar" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px;">
             <h2>Gestão e Acompanhamento de Projetos</h2>
+            
+            <!-- O Filtro agora fica isolado no canto direito -->
+            <div class="filtro-container" style="display: flex; align-items: center; gap: 10px;">
+                <label for="filtro-status" style="font-weight: bold; font-size: 14px; color: #495057;">Filtrar por Status:</label>
+                <select id="filtro-status" onchange="filtrarProjetosPorStatus()" style="padding: 6px 12px; border-radius: 4px; border: 1px solid #ced4da; background-color: #fff; font-size: 14px; cursor: pointer; min-width: 180px;">
+                    <option value="todos">📋 Mostrar Todos</option>
+                    <option value="Não-Iniciado">🔵 Não Iniciado</option>
+                    <option value="Em-Andamento">🟡 Em Andamento</option>
+                    <option value="Finalizado">🟢 Finalizado</option>
+                    <option value="Atrasado">🔴 Atrasado</option>
+                </select>
+            </div>
         </div>
+         
 
-               <h3>Portfólio de Projetos Gravados</h3>
+               
+                
         <table>
             <thead>
                 <tr>
@@ -36,7 +55,7 @@
             </thead>
             <tbody>
                 {{ range .Projetos }}
-                <tr>
+                <tr class="linha-projeto" data-status="{{.StatusGeral}}">
                     <!-- 🛠️ ID Removido daqui -->
                     <td><strong>{{.Nome}}</strong></td>
                     <td>{{.Gerente}}</td>

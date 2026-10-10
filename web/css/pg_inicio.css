@@ -84,3 +84,6 @@ th { background-color: #f8f9fa; font-weight: bold; }
 .btn-logout:hover {
     background-color: #c82333;
 }
+.btn-compras:hover {
+    background-color: #5a6268 !important; /* Escurece sutilmente o cinza ao passar o mouse */
+}

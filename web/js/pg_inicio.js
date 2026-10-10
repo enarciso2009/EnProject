@@ -57,3 +57,26 @@ function resetarBotao(botao) {
     botao.style.color = "#ffffff";
     botao.disabled = false;
 }
+
+function filtrarProjetosPorStatus() {
+    // 1. Captura o valor selecionado na caixa de seleção
+    const statusSelecionado = document.getElementById('filtro-status').value;
+    
+    // 2. Captura todas as linhas de projetos cadastradas na tabela
+    const linhas = document.querySelectorAll('.linha-projeto');
+
+    console.log("-> Filtrando projetos por status:", statusSelecionado);
+
+    // 3. Varre linha por linha decidindo se ela deve aparecer ou sumir
+    linhas.forEach(linha => {
+        const statusDaLinha = linha.getAttribute('data-status');
+
+        if (statusSelecionado === "todos" || statusDaLinha === statusSelecionado) {
+            // Exibe a linha normalmente se for "Todos" ou se o status bater com o escolhido
+            linha.style.display = "";
+        } else {
+            // Oculta a linha da tela de forma invisível
+            linha.style.display = "none";
+        }
+    });
+}

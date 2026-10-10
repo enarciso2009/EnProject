@@ -365,6 +365,7 @@ func ListarProjetos(c *gin.Context) {
 	// 2. Calcula a média aritmética do progresso das tarefas de cada projeto
 	var projetosExibicao []ProjetoComProgresso
 	for _, p := range projetosOriginais {
+		services.CalcularStatusProjeto(&p)
 		somaProgresso := 0
 		progressoGeral := 0
 		totalTarefas := len(p.Tarefas)
