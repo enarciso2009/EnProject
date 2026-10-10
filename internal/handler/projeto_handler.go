@@ -25,29 +25,31 @@ func gerarNomePastaSeguro(nome string) string {
 	return reg.ReplaceAllString(nome, "")
 }
 
+/*
 // ListarProjetos busca os registros autorizados do banco e renderiza a página inicial
-func ListarProjetos(c *gin.Context) {
-	cookieEmail, err := c.Cookie("sessao_token")
-	if err != nil || cookieEmail == "" {
-		c.Redirect(http.StatusSeeOther, "/login")
-		return
+
+	func ListarProjetos(c *gin.Context) {
+		cookieEmail, err := c.Cookie("sessao_token")
+		if err != nil || cookieEmail == "" {
+			c.Redirect(http.StatusSeeOther, "/login")
+			return
+		}
+
+		user, err := services.BuscarUsuarioPorEmail(cookieEmail)
+		if err != nil {
+			c.Redirect(http.StatusSeeOther, "/login")
+			return
+		}
+
+		projetos, err := services.ListarTodosProjetos(user.ID, user.Perfil)
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Erro ao buscar projetos autorizados: %v", err)
+			return
+		}
+
+		c.HTML(http.StatusOK, "index.html", projetos)
 	}
-
-	user, err := services.BuscarUsuarioPorEmail(cookieEmail)
-	if err != nil {
-		c.Redirect(http.StatusSeeOther, "/login")
-		return
-	}
-
-	projetos, err := services.ListarTodosProjetos(user.ID, user.Perfil)
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Erro ao buscar projetos autorizados: %v", err)
-		return
-	}
-
-	c.HTML(http.StatusOK, "index.html", projetos)
-}
-
+*/
 func ExibirFormulario(c *gin.Context) {
 	c.HTML(http.StatusOK, "form.html", nil)
 }
@@ -345,4 +347,54 @@ func ExcluirProjeto(c *gin.Context) {
 
 	// Retorna sucesso para o JavaScript recarregar a tela
 	c.Status(http.StatusOK)
+}
+
+type ProjetoComProgresso struct {
+	models.Projeto
+	ProgressoGeral int
+}
+
+func ListarProjetos(c *gin.Context) {
+	// 1. Busca todos os projetos do banco de dados (Query blindada com COALESCE)
+	projetosOriginais, err := services.ListarTodosOsProjetos()
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Erro ao listar projetos: %v", err)
+		return
+	}
+
+	// 2. Calcula a média aritmética do progresso das tarefas de cada projeto
+	var projetosExibicao []ProjetoComProgresso
+	for _, p := range projetosOriginais {
+		somaProgresso := 0
+		progressoGeral := 0
+		totalTarefas := len(p.Tarefas)
+
+		if totalTarefas > 0 {
+			for _, tarefa := range p.Tarefas {
+				somaProgresso += tarefa.Progresso
+			}
+			progressoGeral = somaProgresso / totalTarefas
+		}
+
+		projetosExibicao = append(projetosExibicao, ProjetoComProgresso{
+			Projeto:        p,
+			ProgressoGeral: progressoGeral,
+		})
+	}
+
+	// 3. Captura o estado de administrador injetado pelo seu middleware de sessão
+	// Caso seu middleware salve com outro nome (ex: "role" ou "user"), mude o termo entre aspas abaixo
+	val, existe := c.Get("is_admin")
+	isAdmin := false
+	if existe {
+		if b, ok := val.(bool); ok {
+			isAdmin = b
+		}
+	}
+
+	// 4. Envia o pacote completo consolidado para renderização do index.html
+	c.HTML(http.StatusOK, "index.html", gin.H{
+		"Projetos": projetosExibicao,
+		"IsAdmin":  isAdmin,
+	})
 }

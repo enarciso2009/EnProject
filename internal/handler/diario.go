@@ -106,20 +106,35 @@ func RegistrarDiario(c *gin.Context) {
 	diario.Pendencias = pendencias
 	diario.Veiculos = veiculos
 
-	// Se for EDIÇÃO, recupera as imagens que já estavam salvas para não perdê-las ao enviar novas
-	if diarioID > 0 {
-		// Buscamos o projeto completo para achar as imagens do relatório específico
-		projAtual, err := services.BuscarProjetoPorID(projetoID)
-		if err == nil {
-			for _, r := range projAtual.Relatorios {
-				if r.ID == diarioID {
-					diario.Imagens = r.Imagens
-					break
+	/*
+		// Se for EDIÇÃO, recupera as imagens que já estavam salvas para não perdê-las ao enviar novas
+		if diarioID > 0 {
+			// Buscamos o projeto completo para achar as imagens do relatório específico
+			projAtual, err := services.BuscarProjetoPorID(projetoID)
+			if err == nil {
+				for _, r := range projAtual.Relatorios {
+					if r.ID == diarioID {
+						diario.Imagens = r.Imagens
+						break
+					}
 				}
 			}
 		}
-	}
+	*/
 
+	// se for Edição, gerencia quais imagens antigas deve permanecer
+	if diarioID > 0 {
+		// Captura do formulario o array de fotos que o usuario escolheu manter na tela
+		fotosRestantes := form.Value["fotos_existentes[]"]
+
+		if len(fotosRestantes) > 0 {
+			// Mantem no objeto do diario apenas as fotos não removidas
+			diario.Imagens = fotosRestantes
+		} else {
+			// Se o usuario apagou todas as fotos antigas na interface, zera o array
+			diario.Imagens = []string{}
+		}
+	}
 	// Processa e armazena os novos arquivos físicos de imagens (se houver)
 	arquivos := form.File["imagens_diario[]"]
 	for _, arquivo := range arquivos {
@@ -135,8 +150,54 @@ func RegistrarDiario(c *gin.Context) {
 	}
 
 	// EXECUÇÃO DO BANCO DE DADOS: Escolhe dinamicamente entre INSERT ou UPDATE
+
+	// EXECUÇÃO DO BANCO DE DADOS: Escolhe dinamicamente entre INSERT ou UPDATE
 	if diario.ID > 0 {
 		// --- MODO EDIÇÃO ---
+
+		// 1. 🔍 Busca a lista de imagens antigas armazenadas atualmente no banco antes de fazer a atualização
+		imagensAntesDoUpdate, errBusca := services.BuscarImagensRelatorio(diario.ID)
+
+		// 2. Coleta do formulário as fotos antigas que SOBREVIVERAM ao "X" na tela
+		fotosRestantes := form.Value["fotos_existentes[]"]
+
+		// 3. 💾 Compara e realiza a exclusão física das imagens descartadas do disco rígido
+		if errBusca == nil {
+			for _, fotoAntiga := range imagensAntesDoUpdate {
+				if fotoAntiga == "" {
+					continue
+				}
+
+				// Verifica se a foto que estava no banco NÃO está no array de sobreviventes
+				foiExcluidaPeloUsuario := true
+				for _, fotoMantida := range fotosRestantes {
+					if fotoAntiga == fotoMantida {
+						foiExcluidaPeloUsuario = false
+						break
+					}
+				}
+
+				// Se ela foi retirada na interface pelo "X", apaga o arquivo físico local
+				if foiExcluidaPeloUsuario {
+					caminhoFisico := strings.TrimPrefix(fotoAntiga, "/")
+					if errRemocao := os.Remove(caminhoFisico); errRemocao != nil {
+						println("[Aviso Disco] Não foi possível remover arquivo órfão editado:", caminhoFisico, "Erro:", errRemocao.Error())
+					} else {
+						println("[Disco] Imagem antiga deletada fisicamente do disco com sucesso:", caminhoFisico)
+					}
+				}
+			}
+		}
+
+		// 4. Concatena os arrays para salvar o novo estado consolidado no banco
+		if len(fotosRestantes) > 0 {
+			// Agrupa as fotos mantidas com as novas que foram enviadas pelo upload atual
+			diario.Imagens = append(fotosRestantes, diario.Imagens...)
+		} else if len(diario.Imagens) == 0 {
+			// Se removeu todas as antigas e não enviou novas, limpa o array de dados
+			diario.Imagens = []string{}
+		}
+
 		err = services.AtualizarRelatorioDiario(&diario)
 		if err != nil {
 			println("[Erro Diario] Erro ao AtualizarRelatorioDiario no Banco:", err.Error())

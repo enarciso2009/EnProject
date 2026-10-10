@@ -320,3 +320,72 @@ func ExcluirProjetoCompleto(id int) error {
 	// Confirma todas as exclusões de uma vez só
 	return tx.Commit(ctx)
 }
+
+// ListarTodosOsProjetos busca todos os projetos tratando possíveis valores nulos com COALESCE
+func ListarTodosOsProjetos() ([]models.Projeto, error) {
+	ctx := context.Background()
+	var projetos []models.Projeto
+
+	// 1. 🌟 CORRIGIDO: "encerramento" escrito corretamente com a letra E
+	queryProjetos := `
+		SELECT 
+			id, 
+			COALESCE(nome, ''), 
+			COALESCE(gerente, ''), 
+			COALESCE(status_geral, ''), 
+			COALESCE(resumo, ''), 
+			total_horas, 
+			COALESCE(observacoes, ''), 
+			COALESCE(introducao, ''), 
+			COALESCE(localizacao, ''), 
+			COALESCE(encerramento, '') 
+		FROM projetos 
+		ORDER BY id DESC`
+
+	rows, err := database.DB.Query(ctx, queryProjetos)
+	if err != nil {
+		println("[Erro Service] Falha na query de projetos:", err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var p models.Projeto
+		err := rows.Scan(
+			&p.ID, &p.Nome, &p.Gerente, &p.StatusGeral, &p.Resumo,
+			&p.TotalHoras, &p.Observacoes, &p.Introducao, &p.Localizacao, &p.Encerramento,
+		)
+		if err != nil {
+			println("[Erro Service] Falha ao escanear projeto:", err.Error())
+			return nil, err
+		}
+
+		// 2. Busca as tarefas vinculadas para alimentar o cálculo de progresso da Home
+		queryTarefas := `
+			SELECT 
+				COALESCE(nome, ''), 
+				COALESCE(responsavel, ''), 
+				data_inicio, 
+				data_fim, 
+				progresso, 
+				concluido 
+			FROM tarefas 
+			WHERE projeto_id = $1`
+
+		tarefaRows, err := database.DB.Query(ctx, queryTarefas, p.ID)
+		if err == nil {
+			for tarefaRows.Next() {
+				var t models.Tarefa
+				errScan := tarefaRows.Scan(&t.Nome, &t.Responsavel, &t.DataInicio, &t.DataFim, &t.Progresso, &t.Concluido)
+				if errScan == nil {
+					p.Tarefas = append(p.Tarefas, t)
+				}
+			}
+			tarefaRows.Close()
+		}
+
+		projetos = append(projetos, p)
+	}
+
+	return projetos, nil
+}

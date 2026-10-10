@@ -139,16 +139,23 @@ function prepararEdicaoDiarioDefinitivo(botao) {
         const participantes = dados.getAttribute('data-part') || "";
         const veiculos = dados.getAttribute('data-veic') || "";
 
-        console.log(`-> Dados Extraídos da Tag Oculta: ID=${id} | Veículos=${veiculos}`);
+        // 🌟 CAPTURA AS IMAGENS EXISTENTES DIRETO DO HISTÓRICO EXPANDIDO
+        const imagensTags = container.querySelectorAll('.historico-thumb');
+        const listaImagens = [];
+        imagensTags.forEach(img => {
+            const src = img.getAttribute('src');
+            if (src) listaImagens.push(src);
+        });
 
-        // 4. Mapeia as caixas de texto do seu formulário na página (Lançar Novo Relatório Diário)
+        console.log(`-> Dados Extraídos: ID=${id} | Fotos Antigas Encontradas=${listaImagens.length}`);
+
+        // 4. Mapeia as caixas de texto do seu formulário na página
         const campoData = document.getElementById('diario_data');
         const campoDesc = document.getElementById('diario_descricao');
         const campoPend = document.getElementById('diario_pendencias');
         const campoPart = document.getElementById('diario_participantes');
         const campoVeic = document.getElementById('diario_veiculos');
 
-        // Alerta caso os IDs das caixas de texto tenham mudado de nome na página
         if (!campoData || !campoDesc || !campoPend || !campoPart || !campoVeic) {
             alert("Erro Técnico: As caixas do formulário de digitação do diário não foram encontradas na página.");
             return;
@@ -161,8 +168,53 @@ function prepararEdicaoDiarioDefinitivo(botao) {
         campoPart.value = participantes;
         campoVeic.value = veiculos;
 
-        // 6. Gerencia o ID oculto no formulário para sinalizar Modo Edição ao Go
+        // 🌟 GERENCIA VISUALMENTE AS FOTOS EXISTENTES NO FORMULÁRIO COM UM BOTÃO DE REMOVER "X"
+        // Procuramos por um container de preview de fotos existentes. Se não houver, criamos um dinamicamente
         const blocoDiario = document.getElementById('bloco-diario');
+        if (blocoDiario) {
+            let containerPreviaExistente = document.getElementById('preview-imagens-existentes-diario');
+            if (!containerPreviaExistente) {
+                containerPreviaExistente = document.createElement('div');
+                containerPreviaExistente.id = 'preview-imagens-existentes-diario';
+                containerPreviaExistente.style.margin = '10px 0';
+                containerPreviaExistente.style.display = 'flex';
+                containerPreviaExistente.style.gap = '10px';
+                containerPreviaExistente.style.flexWrap = 'wrap';
+                
+                // Insere logo antes do input de novas fotos para ficar organizado
+                const inputNovasImagens = document.getElementById('imagens_diario');
+                if (inputNovasImagens) {
+                    inputNovasImagens.parentNode.insertBefore(containerPreviaExistente, inputNovasImagens);
+                }
+            }
+
+            // Limpa miniaturas de edições passadas e desenha as fotos do registro atual
+            containerPreviaExistente.innerHTML = "";
+            if (listaImagens.length > 0) {
+                const labelFotos = document.createElement('div');
+                labelFotos.innerHTML = "<small style='display:block; width:100%; color:#6c757d; margin-bottom:5px;'>Fotos cadastradas (Clique no X vermelho para remover antes de salvar):</small>";
+                containerPreviaExistente.appendChild(labelFotos);
+                
+                listaImagens.forEach(url => {
+                    const boxFoto = document.createElement('div');
+                    boxFoto.className = 'preview-thumb-box-existente';
+                    boxFoto.style.position = 'relative';
+                    boxFoto.style.width = '80px';
+                    boxFoto.style.height = '80px';
+                    
+                    boxFoto.innerHTML = `
+                        <img src="${url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid #dee2e6;">
+                        <!-- input hidden mantém o caminho da foto para enviar de volta ao Go se ela NÃO for excluída -->
+                        <input type="hidden" name="fotos_existentes[]" value="${url}">
+                        <button type="button" onclick="this.closest('.preview-thumb-box-existente').remove()" 
+                                style="position: absolute; top: -5px; right: -5px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">X</button>
+                    `;
+                    containerPreviaExistente.appendChild(boxFoto);
+                });
+            }
+        }
+
+        // 6. Gerencia o ID oculto no formulário para sinalizar Modo Edição ao Go
         if (blocoDiario) {
             let inputId = blocoDiario.querySelector('input[name="diario_id"]');  
             if (!inputId) { 
