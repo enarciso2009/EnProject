@@ -20,12 +20,12 @@
     <div class="card">
         <h2>🎉 Projeto Padronizado com Sucesso!</h2>
         <p>Os dados foram gravados na base do PostgreSQL.</p>
-        <p>Total de esforço computado: <span class="badge">{{.TotalHoras}} Horas</span></p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-        <p>Escolha o formato de saída para o acompanhamento:</p>
+        <!--<p>Total de esforço computado: <span class="badge">{{.TotalHoras}} Horas</span></p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;"> -->
+        <p>Escolha uma opção abaixo:</p>
         
         <!-- O ID do projeto vem da struct injetada pelo Handler -->
-        <a href="/download/excel?id={{.ID}}" class="btn excel">📊 Exportar Planilha Excel</a>
+        <!--<a href="/download/excel?id={{.ID}}" class="btn excel">📊 Exportar Planilha Excel</a> -->
         <a href="/download/html?id={{.ID}}" class="btn html" target="_blank">🌐 Abrir Visualização HTML</a>
         
         <a href="/" class="btn back">← Cadastrar Outro Projeto</a>

@@ -3,71 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Novo Relatório de Projeto</title>
-    <style>
-        body { font-family: sans-serif; background: #f0f2f5; margin: 30px; color: #333; }
-        .box { background: white; padding: 25px; border-radius: 8px; max-width: 1000px; margin: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
-        label { font-weight: bold; margin-bottom: 5px; }
-        input, select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; justify-self: center; }
-        
-        /* Estilos da Galeria de Fotos e Preview */
-        .preview-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-        .preview-img { width: 100px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        
-        .tarefa-header { display: grid; grid-template-columns: 2fr 2fr 1.2fr 1.2fr 0.8fr 0.8fr 0.6fr; gap: 10px; font-weight: bold; margin-bottom: 5px; background: #e9ecef; padding: 8px; border-radius: 4px; text-align: center; }
-        .tarefa-header div { text-align: left; }
-        .tarefa-header .center-lbl { text-align: center; }
-        .tarefa-row { display: grid; grid-template-columns: 2fr 2fr 1.2fr 1.2fr 0.8fr 0.8fr 0.6fr; gap: 10px; margin-bottom: 10px; align-items: center; }
-        button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: bold; }
-        button:hover { background: #0056b3; }
-        .btn-add { background: #28a745; margin-bottom: 20px; }
-        .btn-add:hover { background: #218838; }
-        .btn-del { background: #dc3545; padding: 8px; font-size: 12px; }
-        .btn-del:hover { background: #c82333; }
-        .btn-voltar { background: #6c757d; text-decoration: none; padding: 10px 15px; border-radius: 4px; color: white; font-weight: bold; font-size: 14px; margin-right: 10px; display: inline-block; }
-        h2, h3 { color: #1a1a1a; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
-    </style>
-    <script>
-        function adicionarTarefa() {
-            const container = document.getElementById("tarefas-container");
-            const row = document.createElement("div");
-            row.className = "tarefa-row";
-            row.innerHTML = `
-                <input type="text" name="tarefa_nome[]" placeholder="Ex: Ajustar API" required>
-                <input type="text" name="tarefa_resp[]" placeholder="Nome do dev" required>
-                <input type="date" name="tarefa_inicio[]" required>
-                <input type="date" name="tarefa_fim[]" required>
-                <input type="number" name="tarefa_progresso[]" placeholder="0-100" min="0" max="100" required>
-                <input type="checkbox" onchange="this.nextElementSibling.value = this.checked ? 'true' : 'false'">
-                <input type="hidden" name="tarefa_concluida[]" value="false">
-                <button type="button" class="btn-del" onclick="removerLinha(this)">X</button>
-            `;
-            container.appendChild(row);
-        }
-        function removerLinha(botao) {
-            botao.parentElement.remove();
-        }
 
-        // Exibe miniaturas das imagens selecionadas localmente
-        function visualizarImagens(input) {
-            const container = document.getElementById("preview-imagens");
-            container.innerHTML = "";
-            if (input.files) {
-                Array.from(input.files).forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const img = document.createElement("img");
-                        img.className = "preview-img";
-                        img.src = e.target.result;
-                        container.appendChild(img);
-                    }
-                    reader.readAsDataURL(file);
-                });
-            }
-        }
-    </script>
 </head>
+    <link rel="stylesheet" href="/css/form.css">
 <body>
     <div class="box">
         <h2>Cadastrar Acompanhamento de Projeto</h2>
@@ -99,12 +37,14 @@
                 <textarea name="localizacao" rows="2" placeholder="Endereço, coordenadas, galpões ou subestações onde o projeto ocorre..."></textarea>
             </div>
             
-            <h3>Tarefas do Projeto</h3>
+                        <h3>Tarefas do Projeto</h3>
             <div class="tarefa-header">
                 <div>Nome da Tarefa</div>
                 <div>Responsável</div>
                 <div>Data Início</div>
                 <div>Data Fim</div>
+                <!-- 🌟 Adicionado o rótulo de progresso no cabeçalho -->
+                <div class="center-lbl">Progresso (%)</div>
                 <div class="center-lbl">Concluído?</div>
                 <div class="center-lbl">Ação</div>
             </div>
@@ -114,14 +54,22 @@
                     <input type="text" name="tarefa_resp[]" placeholder="Nome do dev" required>
                     <input type="date" name="tarefa_inicio[]" required>
                     <input type="date" name="tarefa_fim[]" required>
-                    <input type="hidden" name="tarefa_progresso[]" value="0">
-                    <input type="checkbox" onchange="this.nextElementSibling.value = this.checked ? 'true' : 'false'">
-                    <input type="hidden" name="tarefa_concluida[]" value="false">
+                    
+                    <!-- 🌟 CORRIGIDO: Removido o input hidden e inserido o campo de progresso visível com a barra visual -->
+                    <div class="progress-container">
+                        <input type="number" name="tarefa_progresso[]" min="0" max="100" placeholder="0-100" required oninput="atualizarBarraVisual(this)">
+                        <div class="progress-bar-bg" style="background: #e9ecef; border-radius: 4px; width: 60px; height: 8px; overflow: hidden; margin-top: 4px;">
+                            <div class="progress-bar-fill" style="width: 0%; background: #28a745; height: 100%; transition: width 0.2s;"></div>
+                        </div>
+                    </div>
+
+                    <input type="checkbox" onchange="vincularConclusao(this)">
+                    <input type="hidden" name="tarefa_concluido[]" value="false">
                     <button type="button" class="btn-del" onclick="removerLinha(this)">X</button>
                 </div>
             </div>
             <button type="button" class="btn-add" onclick="adicionarTarefa()">+ Adicionar Tarefa</button>
-            
+
             <!-- SEÇÃO DE FOTOS AJUSTADA PARA BAIXO DAS TAREFAS -->
             <h3 style="margin-top: 25px;">📸 Fotos do Projeto</h3>
              <!-- SEU NOVO CABEÇALHO NO FORMULÁRIO -->
@@ -141,5 +89,6 @@
             <button type="submit">Salvar e Gerar Relatórios ✨</button>
         </form>
     </div>
+    <script src="/js/form.js"></script>
 </body>
 </html>
