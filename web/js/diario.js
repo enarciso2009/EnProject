@@ -94,8 +94,9 @@ async function enviarRelatorioDiario() {
         `;
 
         const lista = document.getElementById("historico-lista");
-        lista.insertBefore(novoItem, lista.firstChild);
-
+        if (lista) {
+            lista.insertBefore(novoItem, lista.firstChild);
+        }
         // Limpa os campos após registrar novo item
         dataInput.value = "";
         descricaoInput.value = "";
@@ -103,12 +104,14 @@ async function enviarRelatorioDiario() {
         participantesInput.value = "";
         veiculosInput.value = "";   
         imagensInput.value = "";
-        document.getElementById("preview-imagens-novas-diario").innerHTML = "";
+        const containerPrevia = document.getElementById('preview-imagens-novas-diario');
+        if (containerPrevia) containerPrevia.innerHTML = "";
+        
+        alert("Relatório Diário registrado com sucesso!");// Limpa a pré-visualização de imagens novas
 
-        alert("Relatório Diário registrado com sucesso!");
 
     } catch (error) {
-        console.error(error);
+        console.error("Erro interno capturado pelo script:", error);
         alert("Falha ao registrar o relatório. Verifique seu backend.");
     }
 }

@@ -20,7 +20,7 @@ function adicionarTarefa() {
         
         <!-- Bloco de Progresso com a Faixa Verde de Progressão -->
         <div class="progress-container">
-            <input type="number" name="tarefa_progresso[]" value="0" min="0" max="100" placeholder="%" required oninput="atualizarBarraVisual(this)">
+            <input type="number" name="tarefa_progresso[]" min="0" max="100" placeholder="%" required oninput="atualizarBarraVisual(this)">
             <div class="progress-bar-bg" style="background: #e9ecef; border-radius: 4px; width: 60px; height: 8px; overflow: hidden; margin-top: 4px;">
                 <div class="progress-bar-fill" style="width: 0%; background: #28a745; height: 100%; transition: width 0.2s;"></div>
             </div>
