@@ -389,3 +389,53 @@ func ListarTodosOsProjetos() ([]models.Projeto, error) {
 
 	return projetos, nil
 }
+
+// ListarProjetosPorUsuario busca apenas os projetos liberados para o ID do usuário logado
+func ListarProjetosPorUsuario(usuarioID int) ([]models.Projeto, error) {
+	ctx := context.Background()
+	var projetos []models.Projeto
+
+	// Query com INNER JOIN ou subquery baseado na sua tabela de vínculos de acessos
+	// Ajuste o nome da tabela associativa (ex: usuario_projetos) se for diferente no seu banco
+	query := `
+		SELECT p.id, COALESCE(p.nome, ''), COALESCE(p.gerente, ''), COALESCE(p.status_geral, ''), 
+		       COALESCE(p.resumo, ''), p.total_horas, COALESCE(p.observacoes, ''), 
+		       COALESCE(p.introducao, ''), COALESCE(p.localizacao, ''), COALESCE(p.encerramento, '')
+		FROM projetos p
+		INNER JOIN projeto_usuarios pu ON p.id = pu.projeto_id
+		WHERE pu.usuario_id = $1
+		ORDER BY p.id DESC`
+
+	rows, err := database.DB.Query(ctx, query, usuarioID)
+	if err != nil {
+		println("[Erro Service] Falha na query filtrada por usuário")
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var p models.Projeto
+		err := rows.Scan(
+			&p.ID, &p.Nome, &p.Gerente, &p.StatusGeral, &p.Resumo,
+			&p.TotalHoras, &p.Observacoes, &p.Introducao, &p.Localizacao, &p.Encerramento,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Carrega as tarefas do projeto para o cálculo do progresso
+		queryTarefas := `SELECT nome, responsavel, data_inicio, data_fim, progresso, concluido FROM tarefas WHERE projeto_id = $1`
+		tarefaRows, err := database.DB.Query(ctx, queryTarefas, p.ID)
+		if err == nil {
+			for tarefaRows.Next() {
+				var t models.Tarefa
+				if errScan := tarefaRows.Scan(&t.Nome, &t.Responsavel, &t.DataInicio, &t.DataFim, &t.Progresso, &t.Concluido); errScan == nil {
+					p.Tarefas = append(p.Tarefas, t)
+				}
+			}
+			tarefaRows.Close()
+		}
+		projetos = append(projetos, p)
+	}
+	return projetos, nil
+}

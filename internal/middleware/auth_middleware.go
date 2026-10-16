@@ -11,12 +11,29 @@ import (
 
 func AutenticacaoObrigatoria() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		cookie, err := c.Cookie("sessao_token")
-		if err != nil || cookie == "" {
+		cookieEmail, err := c.Cookie("sessao_token")
+		if err != nil || cookieEmail == "" {
 			c.Redirect(http.StatusSeeOther, "/login")
 			c.Abort()
 			return
 		}
+
+		// 🔍 Busca os dados reais do usuário (ID e Perfil) no banco usando o e-mail do cookie
+		var id int
+		var perfil string
+		query := `SELECT id, perfil FROM usuarios WHERE email = $1`
+
+		errQuery := database.DB.QueryRow(context.Background(), query, cookieEmail).Scan(&id, &perfil)
+		if errQuery != nil {
+			c.Redirect(http.StatusSeeOther, "/login")
+			c.Abort()
+			return
+		}
+
+		// 🌟 INJETA OS DADOS NO CONTEXTO DO GIN PARA OS HANDLERS COLETAREM
+		c.Set("usuario_id", id)
+		c.Set("is_admin", perfil == "admin")
+
 		c.Next()
 	}
 }
@@ -24,22 +41,14 @@ func AutenticacaoObrigatoria() gin.HandlerFunc {
 // RequererAdmin corrigido sem dependência do pacote services!
 func RequererAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		cookie, err := c.Cookie("sessao_token")
-		if err != nil || cookie == "" {
-			c.Redirect(http.StatusSeeOther, "/login")
-			c.Abort()
-			return
-		}
+		// Como AutenticacaoObrigatoria roda antes, pegamos o perfil direto do contexto
+		isAdminField, existe := c.Get("is_admin")
 
-		// Busca o perfil diretamente do banco de dados para quebrar o ciclo de imports
-		var perfil string
-		query := `SELECT perfil FROM usuarios WHERE email = $1`
-		err = database.DB.QueryRow(context.Background(), query, cookie).Scan(&perfil)
-
-		if err != nil || perfil != "admin" {
+		if !existe || !isAdminField.(bool) {
 			c.String(http.StatusForbidden, "Acesso Negado: Apenas administradores podem realizar esta ação.")
 			c.Abort()
 			return
+
 		}
 
 		c.Next()

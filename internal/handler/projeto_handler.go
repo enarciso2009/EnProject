@@ -25,31 +25,6 @@ func gerarNomePastaSeguro(nome string) string {
 	return reg.ReplaceAllString(nome, "")
 }
 
-/*
-// ListarProjetos busca os registros autorizados do banco e renderiza a página inicial
-
-	func ListarProjetos(c *gin.Context) {
-		cookieEmail, err := c.Cookie("sessao_token")
-		if err != nil || cookieEmail == "" {
-			c.Redirect(http.StatusSeeOther, "/login")
-			return
-		}
-
-		user, err := services.BuscarUsuarioPorEmail(cookieEmail)
-		if err != nil {
-			c.Redirect(http.StatusSeeOther, "/login")
-			return
-		}
-
-		projetos, err := services.ListarTodosProjetos(user.ID, user.Perfil)
-		if err != nil {
-			c.String(http.StatusInternalServerError, "Erro ao buscar projetos autorizados: %v", err)
-			return
-		}
-
-		c.HTML(http.StatusOK, "index.html", projetos)
-	}
-*/
 func ExibirFormulario(c *gin.Context) {
 	c.HTML(http.StatusOK, "form.html", nil)
 }
@@ -355,17 +330,33 @@ type ProjetoComProgresso struct {
 }
 
 func ListarProjetos(c *gin.Context) {
-	// 1. Busca todos os projetos do banco de dados (Query blindada com COALESCE)
-	projetosOriginais, err := services.ListarTodosOsProjetos()
+	// 1. Captura o estado de permissão e o ID do usuário injetados pelo seu middleware de autenticação
+	valAdmin, _ := c.Get("is_admin")
+	isAdmin, _ := valAdmin.(bool)
+
+	valUserID, _ := c.Get("usuario_id") // Certifique-se de que seu login injeta o ID do usuário no contexto
+	userID, _ := valUserID.(int)
+
+	var projetosOriginais []models.Projeto
+	var err error
+
+	// 2. 🌟 SEPARAÇÃO DE ESCOPO: Admin vê tudo, Consultor vê apenas o dele
+	if isAdmin {
+		projetosOriginais, err = services.ListarTodosOsProjetos()
+	} else {
+		projetosOriginais, err = services.ListarProjetosPorUsuario(userID)
+	}
+
 	if err != nil {
-		c.String(http.StatusInternalServerError, "Erro ao listar projetos: %v", err)
+		c.String(http.StatusInternalServerError, "Erro ao listar portfólio: %v", err)
 		return
 	}
 
-	// 2. Calcula a média aritmética do progresso das tarefas de cada projeto
+	// 3. Executa o cálculo padrão da média de progresso e status (Mantém seu código idêntico)
 	var projetosExibicao []ProjetoComProgresso
 	for _, p := range projetosOriginais {
 		services.CalcularStatusProjeto(&p)
+
 		somaProgresso := 0
 		progressoGeral := 0
 		totalTarefas := len(p.Tarefas)
@@ -383,17 +374,7 @@ func ListarProjetos(c *gin.Context) {
 		})
 	}
 
-	// 3. Captura o estado de administrador injetado pelo seu middleware de sessão
-	// Caso seu middleware salve com outro nome (ex: "role" ou "user"), mude o termo entre aspas abaixo
-	val, existe := c.Get("is_admin")
-	isAdmin := false
-	if existe {
-		if b, ok := val.(bool); ok {
-			isAdmin = b
-		}
-	}
-
-	// 4. Envia o pacote completo consolidado para renderização do index.html
+	// 4. Envia os dados filtrados para a tela principal
 	c.HTML(http.StatusOK, "index.html", gin.H{
 		"Projetos": projetosExibicao,
 		"IsAdmin":  isAdmin,

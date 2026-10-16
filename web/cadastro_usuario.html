@@ -71,6 +71,45 @@
         </form>
     </div>
 
+     <!-- Adicione este bloco no final do seu cadastro_usuario.html, antes de fechar o </body> -->
+    <div class="box-lista-usuarios" style="margin-top: 40px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h3>Usuários Cadastrados no Sistema</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <thead>
+                <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; text-align: left;">
+                    <th style="padding: 10px;">E-mail</th>
+                    <th style="padding: 10px;">Perfil / Cargo</th>
+                    <th style="padding: 10px; text-align: center;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .ListaUsuarios }}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px;"><strong>{{ .Email }}</strong></td>
+                    <td style="padding: 10px;"><span class="badge-perfil">{{ .Perfil }}</span></td>
+                    <td style="padding: 10px; text-align: center;">
+                        <!-- Botão de Editar (Carrega os dados de volta no formulário do topo) -->
+                        <button type="button" onclick="prepararEdicaoUsuario(this)" 
+                                data-id="{{ .ID }}" 
+                                data-email="{{ .Email }}" 
+                                data-perfil="{{ .Perfil }}"
+                                data-projetos="{{ .ProjetosJSON }}"
+                                style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px;">
+                            Editar
+                        </button>
+                        
+                        <!-- Botão de Excluir (Não permite que o admin delete a si próprio) -->
+                        <button type="button" onclick="excluirUsuario('{{ .ID }}', '{{ .Email }}')"
+                                style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                            Excluir
+                        </button>
+                    </td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+    </div>
+
     <script>
     function alternarProjetos() {
         const perfil = document.getElementById("perfil").value;
@@ -83,6 +122,58 @@
             blocoProjetos.style.display = "flex";
         }
     }
+
+    function prepararEdicaoUsuario(botao) {
+        const id = botao.getAttribute('data-id');
+        const email = botao.getAttribute('data-email');
+        const perfil = botao.getAttribute('data-perfil');
+        
+        // 🌟 Captura a string de IDs de projetos (ex: "[1, 4, 6]") e converte em um Array real do JS
+        const projetosStr = botao.getAttribute('data-projetos') || "[]";
+        const projetosIDs = JSON.parse(projetosStr);
+
+        console.log(`-> Editando usuário: ${email} | Projetos vinculados:`, projetosIDs);
+
+        // Preenche os campos de texto do formulário
+        document.querySelector('input[name="email"]').value = email;
+        document.querySelector('select[name="perfil"]').value = perfil;
+        
+        const inputSenha = document.querySelector('input[name="senha"]');
+        if (inputSenha) {
+            inputSenha.placeholder = "Deixe em branco para manter a senha atual";
+            inputSenha.required = false;
+        }
+
+        // 🌟 VERIFICAÇÃO DINÂMICA DE CHECKBOXES:
+        // 1. Reseta e desmarca TODOS os checkboxes de projetos da página primeiro
+        const todosCheckboxes = document.querySelectorAll('input[name="projetos_vinculados[]"]');
+        todosCheckboxes.forEach(cb => cb.checked = false);
+
+        // 2. Varre os checkboxes e marca apenas aqueles cujo "value" (ID do projeto) está contido no array do usuário
+        todosCheckboxes.forEach(cb => {
+            const idDoCheckbox = parseInt(cb.value);
+            if (projetosIDs.includes(idDoCheckbox)) {
+                cb.checked = true;
+            }
+        });
+
+        // Gerencia o ID oculto para o formulário saber que é um UPDATE
+        let form = document.querySelector('form');
+        let inputId = form.querySelector('input[name="usuario_id"]');
+        if (!inputId) {
+            inputId = document.createElement('input');
+            inputId.type = 'hidden';
+            inputId.name = 'usuario_id';
+            form.appendChild(inputId);
+        }
+        inputId.value = id;
+
+        const btnSalvar = form.querySelector('button[type="submit"]');
+        if (btnSalvar) btnSalvar.innerText = "💾 Atualizar Usuário";
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     </script>
 </body>
 </html>
